@@ -1973,6 +1973,67 @@ const f = ein ? 0.7 : 0.8;
         </div>
       </div>
     `;
+        /*
+     * Hinweis auf bereits übernommene
+     * Lösungsvorschläge.
+     *
+     * Nur im Druckausdruck anzeigen.
+     */
+    if (print && D.sgApplied) {
+      const applied = Object.values(D.sgApplied);
+
+      if (applied.length) {
+        h += `
+          <div class="card lv-print-sg-note">
+            <div class="lv-h4">
+              Rechnerisch angewendeter Lösungsvorschlag
+            </div>
+
+            <p>
+              Für diese Berechnung wurde ein
+              Lösungsvorschlag rechnerisch übernommen.
+              Die folgenden Maßnahmen wurden dabei
+              zugrunde gelegt:
+            </p>
+
+            ${applied
+              .map(
+                (a, i) => `
+                  <div class="lv-print-sg-item">
+                    <strong>
+                      ${E(a.title || "Übernommene Variante")}
+                    </strong>
+
+                    ${
+                      a.ops && a.ops.length
+                        ? `
+                          <ul>
+                            ${a.ops
+                              .map(
+                                o =>
+                                  `<li>${E(o.txt)}</li>`
+                              )
+                              .join("")}
+                          </ul>
+                        `
+                        : ""
+                    }
+                  </div>
+                `
+              )
+              .join("")}
+
+            <p class="lv-mu">
+              Hinweis: Die oben genannten Maßnahmen
+              stellen die rechnerisch angesetzte Variante
+              dar. Sie sind nicht als Nachweis einer
+              tatsächlich ausgeführten Änderung zu verstehen
+              und vor Ausführung fachlich zu prüfen.
+            </p>
+          </div>
+        `;
+      }
+    }
 
     if (!R.res.length) {
       return (
@@ -2927,21 +2988,46 @@ const f = ein ? 0.7 : 0.8;
       }
 
       if (a === "sg") {
-        const S = suggest(D, run(D))[+t.dataset.i];
-        const c = S && S.list[j];
+  const roomId = +t.dataset.i;
 
-        if (!c) return;
+  const S =
+    suggest(D, run(D))[roomId];
 
-        undoSnap = {
-          pid: activeProjectId,
-          snap: clone(D)
-        };
+  const c =
+    S && S.list[j];
 
-        applyOps(D, c.ops);
-        save();
-        render();
-        return;
-      }
+  if (!c) return;
+
+  undoSnap = {
+    pid: activeProjectId,
+    snap: clone(D)
+  };
+
+  /*
+   * Merken, welcher Lösungsvorschlag
+   * rechnerisch übernommen wurde.
+   */
+  if (!D.sgApplied) {
+    D.sgApplied = {};
+  }
+
+  D.sgApplied[String(roomId)] = {
+    title: c.title,
+    ops: clone(c.ops),
+    appliedAt: new Date().toISOString()
+  };
+
+  /*
+   * Die eigentliche rechnerische Änderung
+   * wie bisher anwenden.
+   */
+  applyOps(D, c.ops);
+
+  save();
+  render();
+
+  return;
+}
 
       if (a === "sgundo") {
         if (!undoSnap || undoSnap.pid !== activeProjectId) return;
