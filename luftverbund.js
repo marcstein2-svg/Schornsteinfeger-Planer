@@ -2504,88 +2504,167 @@ const f = ein ? 0.7 : 0.8;
      ========================================================= */
 
   function doPrint() {
-    const old =
-      document.getElementById(
-        "lvPrintRoot"
-      );
-
-    if (old) old.remove();
-
-    const style =
-      document.createElement(
-        "style"
-      );
-
-    style.id =
-      "lvPrintStyle";
-
-    style.textContent = `
-      @page {
-        size: A4;
-        margin: 12mm;
-      }
-
-      @media print {
-        body > *:not(#lvPrintRoot) {
-          display: none !important;
-        }
-
-        #lvPrintRoot {
-          display: block !important;
-          position: static !important;
-          width: auto !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          background: #fff !important;
-        }
-
-        #lvPrintRoot .card {
-          box-shadow: none !important;
-          break-inside: avoid;
-          page-break-inside: avoid;
-          border: 1px solid #999;
-        }
-
-        #lvPrintRoot .form-actions,
-        #lvPrintRoot .lv-project-bar,
-        #lvPrintRoot .lv-tabs {
-          display: none !important;
-        }
-
-        #lvPrintRoot * {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-      }
-    `;
-
-    const r =
-      document.createElement(
-        "div"
-      );
-
-    r.id =
-      "lvPrintRoot";
-
-    r.innerHTML =
-      projectBar() +
-      result(true);
-
-    document.head.appendChild(
-      style
-    );
-
-    document.body.appendChild(
-      r
-    );
-
-    window.print();
-
-    setTimeout(() => {
-      r.remove();
-      style.remove();
-    }, 1000);
+  // Vorhandene Druckansicht entfernen
+  const old =
+    document.getElementById("lvPrintRoot");
+  if (old) {
+    old.remove();
   }
+  // Vorhandenes Druck-Stylesheet entfernen
+  const oldStyle =
+    document.getElementById("lvPrintStyle");
+  if (oldStyle) {
+    oldStyle.remove();
+  }
+  // Druck-CSS erzeugen
+  const style =
+    document.createElement("style");
+  style.id = "lvPrintStyle";
+  style.textContent = `
+    @page {
+      size: A4;
+      margin: 12mm;
+    }
+    @media print {
+      /*
+       * Beim Drucken zunächst die komplette normale
+       * Seite unsichtbar machen.
+       *
+       * visibility statt display sorgt dafür,
+       * dass die Druckstruktur des Dokuments
+       * erhalten bleibt.
+       */
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+      body > * {
+        visibility: hidden !important;
+      }
+      /*
+       * Ausschließlich die erzeugte Druckansicht
+       * und deren Inhalt sichtbar machen.
+       */
+      #lvPrintRoot,
+      #lvPrintRoot * {
+        visibility: visible !important;
+      }
+      #lvPrintRoot {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      /*
+       * Bildschirm-Navigation und Buttons
+       * gehören nicht auf das Druckblatt.
+       */
+      #lvPrintRoot .form-actions,
+      #lvPrintRoot .lv-project-bar,
+      #lvPrintRoot .lv-tabs {
+        display: none !important;
+      }
+      /*
+       * Karten für den Druck optimieren.
+       */
+      #lvPrintRoot .card {
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      /*
+       * Tabellen nicht unnötig auseinanderreißen.
+       */
+      #lvPrintRoot table {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+      #lvPrintRoot tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      /*
+       * Farben und Hintergründe möglichst auch
+       * auf dem Ausdruck erhalten.
+       */
+      #lvPrintRoot * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      /*
+       * Keine unnötigen Außenabstände durch
+       * das normale Seitenlayout.
+       */
+      #lvPrintRoot h1,
+      #lvPrintRoot h2,
+      #lvPrintRoot h3,
+      #lvPrintRoot h4,
+      #lvPrintRoot p {
+        break-inside: avoid;
+      }
+    }
+  `;
+  // Druckcontainer erzeugen
+  const r =
+    document.createElement("div");
+  r.id = "lvPrintRoot";
+  /*
+   * WICHTIG:
+   * result(true) erzeugt die Druckversion des
+   * Ergebnisses einschließlich der
+   * Lösungsvorschläge.
+   */
+  r.innerHTML =
+    projectBar() +
+    result(true);
+  // Erst CSS und Druckansicht in den DOM einfügen
+  document.head.appendChild(style);
+  document.body.appendChild(r);
+  /*
+   * Dem Browser einen kurzen Moment geben,
+   * damit das Drucklayout vollständig aufgebaut
+   * und berechnet werden kann.
+   */
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  });
+  /*
+   * Nach dem tatsächlichen Druckvorgang
+   * aufräumen.
+   *
+   * afterprint ist wesentlich zuverlässiger als
+   * ein festes setTimeout(..., 1000), weil der
+   * Druckdialog unterschiedlich lange geöffnet
+   * bleiben kann.
+   */
+  const cleanup = () => {
+    if (r && r.parentNode) {
+      r.remove();
+    }
+    if (style && style.parentNode) {
+      style.remove();
+    }
+    window.removeEventListener(
+      "afterprint",
+      cleanup
+    );
+  };
+  window.addEventListener(
+    "afterprint",
+    cleanup
+  );
+}
 
   /* =========================================================
      INPUTS
