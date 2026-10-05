@@ -1926,6 +1926,86 @@ const f = ein ? 0.7 : 0.8;
     return h + "</div>";
   }
 
+  /* =========================================================
+     ÜBERNOMMENE LÖSUNGSVORSCHLÄGE
+     ========================================================= */
+
+  /* Liste der übernommenen Maßnahmen (alte Speicherform: Objekt je Raum) */
+  function appliedList() {
+    const a = D.sgApplied;
+
+    if (!a) return [];
+
+    return (Array.isArray(a) ? a : Object.values(a))
+      .filter(x => x && (x.title || (x.ops && x.ops.length)))
+      .map(x => ({
+        room: x.room || "",
+        title: x.title || "Übernommene Variante",
+        ops: (x.ops || [])
+          .map(o => (o && typeof o === "object" ? o.txt : o))
+          .filter(Boolean)
+      }));
+  }
+
+  /* Einzelmaßnahmen nur zeigen, wenn sie die Überschrift ergänzen
+     (wie bei den Lösungsvorschlägen) */
+  const appliedOps = a =>
+    a.ops.length > 1 && a.ops.length < 7 ? a.ops : [];
+
+  function appliedNoteHtml(print) {
+    const list = appliedList();
+
+    if (!list.length) return "";
+
+    return `
+      <div class="card lv-applied">
+        <div class="card-header">
+          <div>
+            <h2>Erforderliche Maßnahmen</h2>
+            <p>
+              Das Ergebnis dieser Berechnung wurde mit Lösungsvorschlägen
+              erreicht. Die Schutzziele gelten nur, wenn die folgenden
+              Maßnahmen umgesetzt werden:
+            </p>
+          </div>
+          <div class="section-icon">${IC.warn}</div>
+        </div>
+
+        ${list
+          .map(
+            (a, i) => `
+              <div class="lv-applied-item">
+                <div>
+                  ${a.room
+                    ? `<small>Aufstellraum: ${E(a.room)}</small>`
+                    : ""}
+                  <strong>${E(a.title)}</strong>
+                  ${appliedOps(a).length
+                    ? `<ul>${appliedOps(a)
+                        .map(o => `<li>${E(o)}</li>`)
+                        .join("")}</ul>`
+                    : ""}
+                </div>
+                ${print
+                  ? ""
+                  : `<button class="btn btn-light btn-small"
+                       data-a="sgnote" data-i="${i}"
+                       title="Hinweis aus dem Ausdruck entfernen">
+                       Entfernen
+                     </button>`}
+              </div>
+            `
+          )
+          .join("")}
+
+        <p class="lv-mu">
+          Planungshilfe – die Maßnahmen sind vor der Ausführung
+          fachlich zu prüfen.
+        </p>
+      </div>
+    `;
+  }
+
   function result(print) {
     const R = run(D);
     const SG = suggest(D, R);
@@ -1976,67 +2056,8 @@ const f = ein ? 0.7 : 0.8;
         </div>
       </div>
     `;
-        /*
-     * Hinweis auf bereits übernommene
-     * Lösungsvorschläge.
-     *
-     * Nur im Druckausdruck anzeigen.
-     */
-    if (print && D.sgApplied) {
-      const applied = Object.values(D.sgApplied);
-
-      if (applied.length) {
-        h += `
-          <div class="card lv-print-sg-note">
-            <div class="lv-h4">
-              Rechnerisch angewendeter Lösungsvorschlag
-            </div>
-
-            <p>
-              Für diese Berechnung wurde ein
-              Lösungsvorschlag rechnerisch übernommen.
-              Die folgenden Maßnahmen wurden dabei
-              zugrunde gelegt:
-            </p>
-
-            ${applied
-              .map(
-                (a, i) => `
-                  <div class="lv-print-sg-item">
-                    <strong>
-                      ${E(a.title || "Übernommene Variante")}
-                    </strong>
-
-                    ${
-                      a.ops && a.ops.length
-                        ? `
-                          <ul>
-                            ${a.ops
-                              .map(
-                                o =>
-                                  `<li>${E(o.txt)}</li>`
-                              )
-                              .join("")}
-                          </ul>
-                        `
-                        : ""
-                    }
-                  </div>
-                `
-              )
-              .join("")}
-
-            <p class="lv-mu">
-              Hinweis: Die oben genannten Maßnahmen
-              stellen die rechnerisch angesetzte Variante
-              dar. Sie sind nicht als Nachweis einer
-              tatsächlich ausgeführten Änderung zu verstehen
-              und vor Ausführung fachlich zu prüfen.
-            </p>
-          </div>
-        `;
-      }
-    }
+    /* Hinweis auf übernommene Lösungsvorschläge (Bildschirm, Druck, PDF) */
+    h += appliedNoteHtml(print);
 
     if (!R.res.length) {
       return (
@@ -2950,6 +2971,53 @@ const f = ein ? 0.7 : 0.8;
     kv("Kennwerte", plainInfo());
     y += 8;
 
+    /* Hinweis auf übernommene Lösungsvorschläge */
+    const appliedPdf = appliedList();
+
+    if (appliedPdf.length) {
+      const bar = (str, o = {}) => {
+        const size = o.size || 9,
+          lead = o.lead || size * 1.45;
+        wrap(str, size, !!o.bold, CW - 20 - (o.ind || 0)).forEach(ln => {
+          ensure(lead);
+          rect(ML, y, CW, lead, { fill: "#fbf5e7" });
+          rect(ML, y, 4, lead, { fill: "#c79a42" });
+          txt(ML + 12 + (o.ind || 0), y + size + (lead - size) / 2 - 1.5, ln, {
+            size,
+            bold: o.bold,
+            color: o.color || "#3a3226"
+          });
+          y += lead;
+        });
+      };
+
+      ensure(80);
+      bar("ERFORDERLICHE MASSNAHMEN", {
+        size: 10.5,
+        bold: true,
+        lead: 20,
+        color: "#7d5b20"
+      });
+      bar(
+        "Das Ergebnis dieser Berechnung wurde mit Lösungsvorschlägen erreicht. Die Schutzziele gelten nur, wenn die folgenden Maßnahmen umgesetzt werden:",
+        { size: 8.8 }
+      );
+      bar(" ", { size: 4, lead: 5 });
+
+      appliedPdf.forEach((a, i) => {
+        if (a.room) bar("Aufstellraum: " + a.room, { size: 8.2, color: "#6c757d" });
+        bar((i + 1) + ".  " + a.title, { size: 9.4, bold: true });
+        appliedOps(a).forEach(o => bar("•  " + o, { size: 8.8, ind: 12 }));
+        bar(" ", { size: 4, lead: 6 });
+      });
+
+      bar("Planungshilfe – die Maßnahmen sind vor der Ausführung fachlich zu prüfen.", {
+        size: 8,
+        color: "#7d5b20"
+      });
+      y += 12;
+    }
+
     if (!RES.res.length) {
       callout(
         "Noch keine Feuerstätte (Gas-/Feststoff-/Ölgerät) in einem Raum erfasst."
@@ -3619,46 +3687,49 @@ const f = ein ? 0.7 : 0.8;
       }
 
       if (a === "sg") {
-  const roomId = +t.dataset.i;
+        const roomId = +t.dataset.i;
 
-  const S =
-    suggest(D, run(D))[roomId];
+        const S = suggest(D, run(D))[roomId];
+        const c = S && S.list[j];
 
-  const c =
-    S && S.list[j];
+        if (!c) return;
 
-  if (!c) return;
+        undoSnap = {
+          pid: activeProjectId,
+          snap: clone(D)
+        };
 
-  undoSnap = {
-    pid: activeProjectId,
-    snap: clone(D)
-  };
+        /* Übernommene Maßnahme merken – erscheint im Ausdruck/PDF,
+           damit der Kunde sieht, was umzusetzen ist. */
+        const list = appliedList();
+        const room =
+          (D.r.find(r => r.id == roomId) || {}).n || "";
 
-  /*
-   * Merken, welcher Lösungsvorschlag
-   * rechnerisch übernommen wurde.
-   */
-  if (!D.sgApplied) {
-    D.sgApplied = {};
-  }
+        list.push({
+          room,
+          title: c.title,
+          ops: c.ops.map(o => o.txt)
+        });
 
-  D.sgApplied[String(roomId)] = {
-    title: c.title,
-    ops: clone(c.ops),
-    appliedAt: new Date().toISOString()
-  };
+        D.sgApplied = list;
 
-  /*
-   * Die eigentliche rechnerische Änderung
-   * wie bisher anwenden.
-   */
-  applyOps(D, c.ops);
+        applyOps(D, c.ops);
 
-  save();
-  render();
+        save();
+        render();
+        return;
+      }
 
-  return;
-}
+      if (a === "sgnote") {
+        const list = appliedList();
+
+        list.splice(i, 1);
+        D.sgApplied = list;
+
+        save();
+        render();
+        return;
+      }
 
       if (a === "sgundo") {
         if (!undoSnap || undoSnap.pid !== activeProjectId) return;
@@ -4096,6 +4167,33 @@ padding: 9px 12px;
 
     .lv-sgres b.ok {
       color: var(--green);
+    }
+
+    .lv-applied {
+      border-left: 6px solid var(--gold) !important;
+      background: #fffaf0;
+    }
+
+    .lv-applied-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px dashed var(--border);
+    }
+
+    .lv-applied-item small {
+      display: block;
+      color: var(--muted);
+      font-size: .78rem;
+      margin-bottom: 2px;
+    }
+
+    .lv-applied-item ul {
+      margin: 6px 0 0 18px;
+      padding: 0;
+      font-size: .88rem;
     }
 
     .lv-ic {
