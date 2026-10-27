@@ -337,6 +337,16 @@
     ".kv-row.sel{background:#fffaf0;border-color:var(--gold)}" +
     ".kv-multi-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}" +
     ".kv-multi-tools .btn{min-height:40px}" +
+    ".kv-item{display:flex;flex-direction:column;gap:4px}" +
+    ".kv-works{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 4px;padding:8px 10px;border:1px dashed var(--gold);border-radius:10px;background:#fffdf7}" +
+    ".kv-works[hidden]{display:none}" +
+    ".kv-chip{min-height:38px;padding:4px 12px;border:1px solid #c9ced2;border-radius:999px;background:#fff;font:inherit;font-size:.82rem;font-weight:700;color:var(--text);cursor:pointer}" +
+    ".kv-chip.on{border-color:var(--gold);background:#fbf5e7}" +
+    ".kv-chip.on::before{content:'✓ '}" +
+    ".kv-wtext{flex:1 1 180px;min-width:0;padding:7px 10px;border:1px solid #c9ced2;border-radius:10px;font-size:16px}" +
+    ".kv-wtext[hidden]{display:none}" +
+    ".kv-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}" +
+    ".kv-quick strong{font-size:.82rem;margin-right:2px}" +
     ".kv-sheet-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}" +
     ".kv-sheet-foot strong{font-size:.95rem}" +
     "@media (max-width:600px){.kv-card{padding:14px}.kv-form{grid-template-columns:1fr}.kv-overlay{padding:0;align-items:stretch}.kv-sheet{max-height:100vh;height:100%;border-radius:0}.kv-actions .btn{flex:1}}";
@@ -359,6 +369,37 @@
       if (opts && opts.onChange) opts.onChange();
     }
 
+    /* Tätigkeit direkt bei der Auswahl (nur Mehrfachauswahl mit opts.work) */
+    var wk = multi && opts && opts.work ? opts.work : null;
+
+    function chipsHtml(id) {
+      var w = wk.getWork(id);
+
+      return (
+        wk.types
+          .map(function (t) {
+            return '<button type="button" class="kv-chip' + (w[t.k] ? " on" : "") + '" data-kvw="' + t.k + '">' + E(t.l) + "</button>";
+          })
+          .join("") +
+        '<input class="kv-wtext" type="text" maxlength="40" placeholder="Eigener Text, z. B. Feuerstättenschau" aria-label="Sonstige Arbeit" value="' +
+        E(w.text || "") +
+        '"' +
+        (w.other ? "" : " hidden") +
+        ">"
+      );
+    }
+
+    function item(k, rowHtml) {
+      if (!wk) return rowHtml;
+
+      var on = sel.has(k.id);
+
+      return (
+        '<div class="kv-item" data-id="' + E(k.id) + '">' + rowHtml +
+        '<div class="kv-works"' + (on ? "" : " hidden") + ">" + (on ? chipsHtml(k.id) : "") + "</div></div>"
+      );
+    }
+
     host.innerHTML =
       '<div class="kv-bar">' +
       '<input class="kv-search" type="search" placeholder="Suchen: Name oder Kundennummer" ' +
@@ -370,6 +411,18 @@
           '<button type="button" class="btn btn-light" data-kv="selall">Alle angezeigten auswählen</button>' +
           '<button type="button" class="btn btn-light" data-kv="selnone">Auswahl leeren</button>' +
           "</div>"
+        : "") +
+      (wk
+        ? '<div class="kv-quick"><strong>Tätigkeit für alle Ausgewählten:</strong>' +
+          wk.types
+            .filter(function (t) {
+              return t.k !== "other";
+            })
+            .map(function (t) {
+              return '<button type="button" class="kv-chip" data-kvq="' + t.k + '">' + E(t.l) + "</button>";
+            })
+            .join("") +
+          '<button type="button" class="kv-chip" data-kvq="none">Zurücksetzen</button></div>'
         : "") +
       '<div class="kv-body"></div>';
 
@@ -444,6 +497,14 @@
     }
 
     function houseRow(k) {
+      return item(k, houseButton(k));
+    }
+
+    function searchRow(k) {
+      return item(k, searchButton(k));
+    }
+
+    function houseButton(k) {
       return (
         '<button type="button" class="kv-row' + (multi && sel.has(k.id) ? " sel" : "") + '" data-kv="cust" data-id="' +
         E(k.id) +
@@ -459,7 +520,7 @@
       );
     }
 
-    function searchRow(k) {
+    function searchButton(k) {
       return (
         '<button type="button" class="kv-row' + (multi && sel.has(k.id) ? " sel" : "") + '" data-kv="cust" data-id="' +
         E(k.id) +
@@ -631,6 +692,21 @@
 
           if (box) box.classList.toggle("on", sel.has(k.id));
 
+          if (wk) {
+            var itemEl = t.closest(".kv-item");
+            var wEl = itemEl && itemEl.querySelector(".kv-works");
+
+            if (wEl) {
+              if (sel.has(k.id)) {
+                wEl.innerHTML = chipsHtml(k.id);
+                wEl.hidden = false;
+              } else {
+                wEl.hidden = true;
+                wEl.innerHTML = "";
+              }
+            }
+          }
+
           changed();
         } else if (mode === "pick") {
           if (onPick) onPick(k);
@@ -639,6 +715,67 @@
         }
       }
     });
+
+    if (wk) {
+      host.addEventListener("click", function (e) {
+        var c = e.target.closest("[data-kvw]");
+
+        if (c) {
+          var itemEl = c.closest(".kv-item");
+          var w = wk.getWork(itemEl.getAttribute("data-id"));
+          var key = c.getAttribute("data-kvw");
+
+          w[key] = !w[key];
+          c.classList.toggle("on", !!w[key]);
+
+          if (key === "other") {
+            var inp = itemEl.querySelector(".kv-wtext");
+
+            inp.hidden = !w.other;
+
+            if (w.other) inp.focus();
+          }
+
+          changed();
+          return;
+        }
+
+        var q = e.target.closest("[data-kvq]");
+
+        if (q) {
+          var kind = q.getAttribute("data-kvq");
+          var scroller = host.closest(".kv-sheet-body");
+          var top = scroller ? scroller.scrollTop : 0;
+
+          sel.forEach(function (id) {
+            var w2 = wk.getWork(id);
+
+            if (kind === "none") {
+              wk.types.forEach(function (t) {
+                w2[t.k] = false;
+              });
+              w2.text = "";
+            } else {
+              w2[kind] = true;
+            }
+          });
+
+          update();
+
+          if (scroller) scroller.scrollTop = top;
+
+          changed();
+        }
+      });
+
+      host.addEventListener("input", function (e) {
+        var inp = e.target.closest(".kv-wtext");
+
+        if (!inp) return;
+
+        wk.getWork(inp.closest(".kv-item").getAttribute("data-id")).text = inp.value;
+      });
+    }
 
     var api = { update: update, host: host };
 
@@ -909,7 +1046,7 @@
   }
 
   /* Mehrfachauswahl: cb(arrayVonKunden) – sortiert nach Ort, Straße, Hausnummer */
-  function pickMany(cb, preselected) {
+  function pickMany(cb, preselected, work) {
     var sel = new Set(preselected || []);
     var ov = document.createElement("div");
 
@@ -929,7 +1066,26 @@
     var okBtn = ov.querySelector('[data-x="ok"]');
 
     function count() {
-      cnt.textContent = sel.size + (sel.size === 1 ? " Kunde" : " Kunden") + " ausgewählt";
+      var txt = sel.size + (sel.size === 1 ? " Kunde" : " Kunden") + " ausgewählt";
+
+      if (work) {
+        var without = 0;
+
+        sel.forEach(function (id) {
+          var w = work.getWork(id);
+
+          if (
+            !work.types.some(function (t) {
+              return w[t.k];
+            })
+          )
+            without++;
+        });
+
+        if (without) txt += " · " + without + " ohne Tätigkeit";
+      }
+
+      cnt.textContent = txt;
       okBtn.disabled = !sel.size;
     }
 
@@ -968,7 +1124,8 @@
 
     mountBrowser(ov.querySelector(".kv-pick-host"), "multi", null, {
       sel: sel,
-      onChange: count
+      onChange: count,
+      work: work || null
     });
 
     count();
