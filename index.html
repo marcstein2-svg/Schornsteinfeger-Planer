@@ -1419,6 +1419,7 @@
     .sp-auto-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 2px; }
     .sp-auto-quick > span { font-weight: 800; font-size: .82rem; }
     .sp-auto-warn { margin-top: 8px; padding: 8px 10px; border: 1px solid #e9c78d; border-radius: 10px; background: #fff4e0; color: #7a4600; }
+    .sp-linkbtn { border: 0; background: none; padding: 0; font: inherit; font-weight: 800; color: #7d5b20; text-decoration: underline; cursor: pointer; }
     .sp-modal-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
     .sp-danger { color: var(--red); }
 
@@ -1812,7 +1813,7 @@
         <div>
           <span class="sp-eyebrow">📅 Terminplanung</span>
           <h2>Kalender</h2>
-          <p>Plane Kundentermine lokal im Browser. Maximal vier Termine pro Stunde.</p>
+          <p>Plane Kundentermine lokal im Browser. Die Dauer richtet sich nach den Tätigkeiten.</p>
         </div>
         <div class="sp-calendar-actions">
           <button class="btn btn-light" type="button" id="spBackupData">💾 Daten sichern</button>
@@ -3208,6 +3209,25 @@
 </main>
 
 <!-- TERMINMODAL -->
+<div class="sp-modal-backdrop" id="spTimesModal" hidden style="z-index:10002">
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spTimesTitle">
+    <h3 id="spTimesTitle">Zeiten je Tätigkeit</h3>
+    <p class="sp-muted" style="margin:-4px 0 12px">So lange dauert die Tätigkeit beim Kunden (in Minuten). Werden mehrere Tätigkeiten gewählt, zählen die Zeiten zusammen – z. B. Kehrung 10 + Messung 20 = 30 Minuten. Gilt für neue Termine und die automatische Terminvergabe.</p>
+    <div class="sp-form-grid">
+      <div class="field"><label for="spTime_kehrung">Kehrung</label><input id="spTime_kehrung" type="number" min="1" max="480" inputmode="numeric"></div>
+      <div class="field"><label for="spTime_messung">Messung</label><input id="spTime_messung" type="number" min="1" max="480" inputmode="numeric"></div>
+      <div class="field"><label for="spTime_feststoff">Feststoffmessung</label><input id="spTime_feststoff" type="number" min="1" max="480" inputmode="numeric"></div>
+      <div class="field"><label for="spTime_schau">Feuerstättenschau</label><input id="spTime_schau" type="number" min="1" max="480" inputmode="numeric"></div>
+      <div class="field"><label for="spTime_other">Sonstiges</label><input id="spTime_other" type="number" min="1" max="480" inputmode="numeric"></div>
+    </div>
+    <div class="sp-modal-actions">
+      <button class="btn btn-light" type="button" id="spTimesReset">Standard</button>
+      <button class="btn btn-light" type="button" id="spTimesCancel">Abbrechen</button>
+      <button class="btn btn-primary" type="button" id="spTimesSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <div class="sp-modal-backdrop" id="spAutoModal" hidden>
   <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spAutoTitle">
     <h3 id="spAutoTitle">Termine automatisch einplanen</h3>
@@ -3219,12 +3239,13 @@
     <div class="sp-form-grid">
       <div class="field"><label for="spAutoFrom">Termine ab (Datum)</label><input id="spAutoFrom" type="date"></div>
       <div class="field"><label for="spAutoTo">Termine bis (Datum)</label><input id="spAutoTo" type="date"></div>
-      <div class="field"><label for="spAutoStart">Täglich ab (Uhrzeit)</label><input id="spAutoStart" type="time" step="900"></div>
-      <div class="field"><label for="spAutoEnd">Täglich bis (Uhrzeit)</label><input id="spAutoEnd" type="time" step="900"></div>
+      <div class="field"><label for="spAutoStart">Täglich ab (Uhrzeit)</label><input id="spAutoStart" type="time" step="300"></div>
+      <div class="field"><label for="spAutoEnd">Täglich bis (Uhrzeit)</label><input id="spAutoEnd" type="time" step="300"></div>
       <div class="field"><label for="spAutoMax">Max. Termine pro Tag</label><input id="spAutoMax" type="number" min="1" max="99" inputmode="numeric" placeholder="unbegrenzt"></div>
-      <div class="field"><label for="spAutoDuration">Dauer je Termin</label><select id="spAutoDuration"><option value="15">15 Minuten</option><option value="30">30 Minuten</option></select></div>
+      <div class="field"><label for="spAutoDuration">Dauer ohne Tätigkeit</label><select id="spAutoDuration"><option value="10">10 Minuten</option><option value="15">15 Minuten</option><option value="20">20 Minuten</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></div>
     </div>
-    <label class="sp-work" style="margin-top:12px;display:flex"><input type="checkbox" id="spAutoBreak"><span>30 Minuten Pause berücksichtigen<br><small class="sp-muted" style="font-weight:600">Pause 12:30–13:00 Uhr – zwischen 12 und 13 Uhr werden dann nur 2 statt 4 Termine vergeben.</small></span></label>
+    <div class="sp-muted" style="margin-top:10px;font-size:.84rem">Die Dauer je Kunde ergibt sich aus der gewählten Tätigkeit (mehrere = Summe). <button type="button" class="sp-linkbtn" id="spTimesOpenAuto">⏱ Zeiten je Tätigkeit anpassen</button></div>
+    <label class="sp-work" style="margin-top:12px;display:flex"><input type="checkbox" id="spAutoBreak"><span>30 Minuten Pause berücksichtigen<br><small class="sp-muted" style="font-weight:600">Pause 12:30–13:00 Uhr – in dieser Zeit werden keine Termine vergeben (bei 15-Minuten-Terminen sind es zwischen 12 und 13 Uhr dann nur 2 statt 4).</small></span></label>
     <div class="sp-auto-preview" id="spAutoPreview"></div>
     <div class="sp-modal-actions">
       <button class="btn btn-light" type="button" id="spAutoCancel">Abbrechen</button>
@@ -3243,13 +3264,13 @@
     </div>
     <div class="sp-form-grid">
       <div class="field"><label for="spAptDate">Datum</label><input id="spAptDate" type="date"></div>
-      <div class="field"><label for="spAptTime">Uhrzeit</label><input id="spAptTime" type="time" step="900"></div>
+      <div class="field"><label for="spAptTime">Uhrzeit</label><input id="spAptTime" type="time" step="60"></div>
       <div class="field"><label for="spAptCustomer">Kunde</label><input id="spAptCustomer" type="text" placeholder="Vor- und Nachname"></div>
       <div class="field"><label for="spAptStreet">Straße</label><input id="spAptStreet" type="text" placeholder="Straße"></div>
       <div class="field"><label for="spAptHouse">Hausnummer</label><input id="spAptHouse" type="text" placeholder="Hausnummer"></div>
       <div class="field"><label for="spAptZip">PLZ</label><input id="spAptZip" type="text" inputmode="numeric" placeholder="PLZ"></div>
       <div class="field"><label for="spAptCity">Ort</label><input id="spAptCity" type="text" placeholder="Ort"></div>
-      <div class="field"><label for="spAptDuration">Dauer</label><select id="spAptDuration"><option value="15">15 Minuten</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></div>
+      <div class="field"><label for="spAptDuration">Dauer</label><select id="spAptDuration"><option value="10">10 Minuten</option><option value="15">15 Minuten</option><option value="20">20 Minuten</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></div>
     </div>
     <div class="sp-works-box">
       <div class="sp-works-title">Arbeiten (werden im Terminvorschlag angekreuzt)</div>
@@ -3260,7 +3281,8 @@
         <label class="sp-work"><input type="checkbox" id="spWorkSchau"><span>Feuerstättenschau</span></label>
         <label class="sp-work"><input type="checkbox" id="spWorkOther"><span>Sonstiges</span></label>
       </div>
-      <div id="spWorkFeststoffInfo" class="sp-muted" hidden style="margin-top:8px;font-size:.82rem">Feststoffmessung: Dauer 60 Minuten. Im Terminvorschlag erscheint ein Hinweis für den Kunden (Messung dauert ca. 1 Stunde, Kessel vorbereiten).</div>
+      <div id="spWorkFeststoffInfo" class="sp-muted" hidden style="margin-top:8px;font-size:.82rem">Feststoffmessung: Im Terminvorschlag erscheint ein Hinweis für den Kunden (Dauer der Messung, Pelletkessel bzw. Scheitholzkessel vorbereiten).</div>
+      <div class="sp-muted" style="margin-top:8px;font-size:.82rem">Die Dauer des Termins wird aus den Zeiten je Tätigkeit berechnet (mehrere Tätigkeiten = Summe). <button type="button" class="sp-linkbtn" id="spTimesFromApt">⏱ Zeiten anpassen</button></div>
       <div class="field" id="spWorkOtherWrap" hidden style="margin-top:8px"><input id="spWorkOtherText" type="text" maxlength="40" placeholder="Eigener Text, z. B. Feuerstättenschau" aria-label="Sonstige Arbeit"></div>
     </div>
     <div class="field" style="margin-top:10px"><label for="spAptNotes">Besonderheiten</label><textarea id="spAptNotes" rows="4" placeholder="Zugang, Besonderheiten, Hinweise …"></textarea></div>
@@ -6219,6 +6241,17 @@
     if (typeof window.renderAll === "function") window.renderAll();
   }
   function appointments() { const a = data().appointments; return Array.isArray(a) ? a : []; }
+  /* Zeiten je Tätigkeit (Minuten) – individuell einstellbar, mehrere Tätigkeiten = Summe */
+  const WORK_DEFAULT_MIN = { kehrung: 10, messung: 20, feststoff: 60, schau: 30, other: 15 };
+  const WORK_NAMES = { kehrung: "Kehrung", messung: "Messung", feststoff: "Feststoffmessung", schau: "Feuerstättenschau", other: "Sonstiges" };
+  function workMinutesCfg() {
+    const saved = (data().appointmentSettings || {}).workMinutes || {};
+    const o = {};
+    Object.keys(WORK_DEFAULT_MIN).forEach(k => { const v = Math.round(Number(saved[k])); o[k] = v > 0 ? v : WORK_DEFAULT_MIN[k]; });
+    return o;
+  }
+  function minutesForWorks(list) { const c = workMinutesCfg(); return list.reduce((n, k) => n + (c[k] || 0), 0); }
+  function durText(min) { return min === 60 ? "1 Stunde" : min % 60 === 0 ? (min / 60) + " Stunden" : min + " Minuten"; }
   function settings() { return { businessName:"", employeeName:"", phone:"", businessAddress:"", ...(data().appointmentSettings || {}) }; }
   function currentYear() { return Number($("year")?.value || data().year || new Date().getFullYear()); }
   function currentState() { return $("state")?.value || data().state || "HE"; }
@@ -6269,11 +6302,12 @@
     $("spAutoMax").addEventListener("input", updateAuto);
     $("spAutoPreview").addEventListener("click", autoPreviewClick);
     $("spAutoPreview").addEventListener("input", autoPreviewInput);
-    $("spWorkFeststoff").addEventListener("change", () => {
-      /* Feststoffmessung dauert ca. 1 Stunde -> Dauer auf 60 Minuten setzen */
-      if ($("spWorkFeststoff").checked && Number($("spAptDuration").value) < 60) $("spAptDuration").value = "60";
-      syncWorkOther();
-    });
+    ["spWorkKehrung", "spWorkMessung", "spWorkFeststoff", "spWorkSchau", "spWorkOther"].forEach(id => $(id).addEventListener("change", () => { applyWorkDuration(); syncWorkOther(); }));
+    $("spTimesFromApt").addEventListener("click", openTimesModal);
+    $("spTimesOpenAuto").addEventListener("click", openTimesModal);
+    $("spTimesCancel").addEventListener("click", closeTimesModal);
+    $("spTimesSave").addEventListener("click", saveTimes);
+    $("spTimesReset").addEventListener("click", () => { Object.keys(WORK_DEFAULT_MIN).forEach(k => { $("spTime_" + k).value = WORK_DEFAULT_MIN[k]; }); });
     $("spWorkOther").addEventListener("change", () => { syncWorkOther(); if ($("spWorkOther").checked) $("spWorkOtherText").focus(); });
     $("spSaveAppointment").addEventListener("click", saveAppointment);
     $("spCancelAppointment").addEventListener("click", closeModal);
@@ -6306,7 +6340,7 @@
     $("spBusinessAddress").value = s.businessAddress;
   }
   function saveSettings() {
-    persist({ appointmentSettings: { businessName:$("spBusinessName").value.trim(), employeeName:$("spEmployeeName").value.trim(), phone:$("spPhone").value.trim(), businessAddress:$("spBusinessAddress").value.trim() } });
+    persist({ appointmentSettings: { ...settings(), businessName:$("spBusinessName").value.trim(), employeeName:$("spEmployeeName").value.trim(), phone:$("spPhone").value.trim(), businessAddress:$("spBusinessAddress").value.trim() } });
   }
 
   function move(delta) {
@@ -6330,8 +6364,13 @@
     return `${pad(hour)}:00`;
   }
   function firstFreeSlot(day) {
-    for (let h = 8; h <= 17; h++) if (hourCount(day, `${pad(h)}:00`, null) < 4) return freeTimeIn(day, h);
+    for (let m = 8 * 60; m <= 17 * 60 + 45; m += 5) if (!overlapWith(day, fromMin(m), 15, null)) return fromMin(m);
     return "09:00";
+  }
+  /* Termin, der sich mit [Beginn, Beginn+Dauer) überschneidet (oder null) */
+  function overlapWith(date, time, dur, ignoreId) {
+    const s = toMin(time), e = s + dur;
+    return appointments().find(a => a.id !== ignoreId && a.date === date && s < toMin(a.time) + (Number(a.duration) || 15) && e > toMin(a.time)) || null;
   }
   function addBtn(day, time, label, aria) {
     return `<button type="button" class="sp-add" data-sp-open="" data-date="${esc(day)}" data-time="${esc(time)}" aria-label="${esc(aria || "Termin anlegen")}">${label}</button>`;
@@ -6398,6 +6437,7 @@
     $("spAptHouse").value = a?.house || "";
     $("spAptZip").value = a?.zip || "";
     $("spAptCity").value = a?.city || "";
+    ensureDurOption(a?.duration || 15);
     $("spAptDuration").value = String(a?.duration || 15);
     $("spAptNotes").value = a?.notes || "";
     const wk = Array.isArray(a?.works) ? a.works : [];
@@ -6452,6 +6492,44 @@
     });
   }
 
+  /* Dauer-Auswahl: fehlenden Wert (z. B. 25 Minuten) ergänzen */
+  function ensureDurOption(min) {
+    const sel = $("spAptDuration");
+    min = Number(min) || 15;
+    if ([...sel.options].some(o => Number(o.value) === min)) return;
+    const opt = document.createElement("option");
+    opt.value = String(min); opt.textContent = `${min} Minuten`;
+    const after = [...sel.options].find(o => Number(o.value) > min);
+    sel.insertBefore(opt, after || null);
+  }
+  function applyWorkDuration() {
+    const w = selectedWorks();
+    if (!w.length) return;
+    const m = minutesForWorks(w);
+    ensureDurOption(m);
+    $("spAptDuration").value = String(m);
+  }
+
+  /* Dialog „Zeiten je Tätigkeit“ */
+  function openTimesModal() {
+    const c = workMinutesCfg();
+    Object.keys(WORK_DEFAULT_MIN).forEach(k => { $("spTime_" + k).value = c[k]; });
+    $("spTimesModal").hidden = false;
+  }
+  function closeTimesModal() { $("spTimesModal").hidden = true; }
+  function saveTimes() {
+    const wm = {};
+    for (const k of Object.keys(WORK_DEFAULT_MIN)) {
+      const v = Math.round(Number($("spTime_" + k).value));
+      if (!(v >= 1 && v <= 480)) return alert(`Bitte für „${WORK_NAMES[k]}“ eine Zeit zwischen 1 und 480 Minuten eingeben.`);
+      wm[k] = v;
+    }
+    persist({ appointmentSettings: { ...settings(), workMinutes: wm } });
+    closeTimesModal();
+    if (!$("spAutoModal").hidden) updateAuto();
+    if (!$("spAppointmentModal").hidden) applyWorkDuration();
+  }
+
   /* ================= Termine automatisch einplanen ================= */
   const AUTO_KEY = "schornstein-planer-auto-v1";
   const BREAK_FROM = 12 * 60 + 30, BREAK_TO = 13 * 60;   // Pause 12:30–13:00 Uhr
@@ -6482,7 +6560,7 @@
         if (t === "none") { if (w.feststoff) replan = true; w.kehrung = w.messung = w.feststoff = w.schau = w.other = false; w.text = ""; } else w[t] = true;
         row.querySelector(".sp-auto-works").innerHTML = chipsHtml(row.dataset.kid);
       });
-      if (replan) refreshAuto();
+      refreshAuto();
       return;
     }
     const chip = e.target.closest("[data-aw]");
@@ -6495,10 +6573,10 @@
       inp.hidden = !w.other;
       if (w.other) inp.focus();
     }
-    if (t === "feststoff") refreshAuto();   // Feststoffmessung braucht 60 Minuten -> Plan neu berechnen
+    refreshAuto(row.dataset.kid, t === "other" && w.other);   // Dauer ändert sich -> Plan neu berechnen
   }
   /* Plan neu berechnen und Scrollpositionen beibehalten */
-  function refreshAuto() {
+  function refreshAuto(kid, focusText) {
     const modal = document.querySelector("#spAutoModal .sp-modal");
     const list = document.querySelector("#spAutoPreview .sp-auto-list");
     const m = modal ? modal.scrollTop : 0, l = list ? list.scrollTop : 0;
@@ -6506,6 +6584,7 @@
     const list2 = document.querySelector("#spAutoPreview .sp-auto-list");
     if (modal) modal.scrollTop = m;
     if (list2) list2.scrollTop = l;
+    if (kid && focusText) { const inp = document.querySelector(`#spAutoPreview [data-kid="${kid}"] .sp-auto-other`); if (inp && !inp.hidden) inp.focus(); }
   }
   function autoPreviewInput(e) {
     const inp = e.target.closest(".sp-auto-other");
@@ -6564,29 +6643,26 @@
     const state = {};
     const dayState = key => state[key] || (state[key] = {
       busy: existing.filter(a => a.date === key).map(a => ({ s: toMin(a.time), e: toMin(a.time) + (Number(a.duration) || 15) })),
-      count: existing.filter(a => a.date === key).length,
-      perHour: existing.filter(a => a.date === key).reduce((o, a) => { const h = Number(a.time.slice(0, 2)); o[h] = (o[h] || 0) + 1; return o; }, {})
+      count: existing.filter(a => a.date === key).length
     });
-    /* Je Kunde: normale Dauer, bei Feststoffmessung 60 Minuten */
-    const durOf = k => (autoWork(k.id).feststoff ? 60 : dur);
+    /* Dauer je Kunde: Summe der Zeiten seiner Tätigkeiten, ohne Tätigkeit die Standarddauer */
+    const durOf = k => { const l = autoWorkList(autoWork(k.id)); return l.length ? minutesForWorks(l) : dur; };
     let idx = 0, di = 0, s = startMin;
     while (idx < cand.length && di < days.length) {
       const k = cand[idx], d = durOf(k), st = dayState(days[di]);
       if (maxDay && st.count >= maxDay) { di++; s = startMin; continue; }   // Tageslimit erreicht
-      let found = false;
-      for (; s + d <= endMin; s += dur) {
-        if (pause && s < BREAK_TO && s + d > BREAK_FROM) continue;
-        if (st.busy.some(b => s < b.e && s + d > b.s)) continue;
-        const h = Math.floor(s / 60);
-        if ((st.perHour[h] || 0) >= 4) continue;
-        st.perHour[h] = (st.perHour[h] || 0) + 1;
+      let placed = false;
+      while (s + d <= endMin) {
+        if (pause && s < BREAK_TO && s + d > BREAK_FROM) { s = BREAK_TO; continue; }   // Pause: danach weiter
+        const clash = st.busy.find(b => s < b.e && s + d > b.s);
+        if (clash) { s = clash.e; continue; }
         st.busy.push({ s, e: s + d });
         st.count++;
         res.placed.push({ k, date: days[di], time: fromMin(s), dur: d });
-        s += d; idx++; found = true;
+        s += d; idx++; placed = true;
         break;
       }
-      if (!found) { di++; s = startMin; }
+      if (!placed) { di++; s = startMin; }
     }
     res.unplaced = cand.slice(idx);
     return res;
@@ -6612,7 +6688,7 @@
       let day = "";
       plan.placed.forEach(p => {
         if (p.date !== day) { day = p.date; html += `<div class="sp-auto-day">${esc(fmtDate(day))}</div>`; }
-        html += `<div class="sp-auto-line sp-auto-cust" data-kid="${esc(p.k.id)}"><span class="sp-auto-time">${esc(p.time)}</span><span class="sp-auto-who"><span>${esc(p.k.name)} – ${esc(addrLine(p.k))}${p.dur !== plan.baseDur ? ` <small class="sp-muted">(${p.dur} Min.)</small>` : ""}</span><span class="sp-auto-works">${chipsHtml(p.k.id)}</span></span></div>`;
+        html += `<div class="sp-auto-line sp-auto-cust" data-kid="${esc(p.k.id)}"><span class="sp-auto-time">${esc(p.time)}</span><span class="sp-auto-who"><span>${esc(p.k.name)} – ${esc(addrLine(p.k))}<small class="sp-muted"> (${p.dur} Min.)</small></span><span class="sp-auto-works">${chipsHtml(p.k.id)}</span></span></div>`;
       });
       html += `</div>`;
     }
@@ -6742,41 +6818,113 @@
       y += 18;
     };
 
-    days.forEach(day => {
-      header(day, false);
-      day.items.forEach(a => {
-        const k = a.kid && window.SPKunden ? window.SPKunden.get(a.kid) : null;
-        // Zellen als Zeilenlisten
-        const cTime = [{ t: a.time, size: 10.5, bold: true }];
-        if ((Number(a.duration) || 15) > 15) cTime.push({ t: "bis " + endTime(a), size: 8, color: "#6c757d" });
-        const cWho = [];
-        wrap(a.customer || "(ohne Namen)", 9.8, true, cols[2].w - 2 * padX).forEach(t => cWho.push({ t, size: 9.8, bold: true }));
-        [[a.street, a.house].filter(Boolean).join(" "), [a.zip, a.city].filter(Boolean).join(" ")].filter(Boolean).forEach(line =>
-          wrap(line, 8.8, false, cols[2].w - 2 * padX).forEach(t => cWho.push({ t, size: 8.8, color: "#4f5962" })));
-        const cWork = [];
-        const wt = worksText(a);
-        if (wt.length) wt.forEach(w => wrap(w, 9, false, cols[3].w - 2 * padX).forEach(t => cWork.push({ t, size: 9 })));
-        else cWork.push({ t: "–", size: 9, color: "#8a9199" });
-        const cNote = [];
-        if (k && k.phone) wrap("Tel. " + k.phone, 8.6, true, cols[4].w - 2 * padX).forEach(t => cNote.push({ t, size: 8.6, bold: true }));
-        if (a.notes) wrap(a.notes, 8.4, false, cols[4].w - 2 * padX).forEach(t => cNote.push({ t, size: 8.4 }));
-        if (a.knr) cNote.push({ t: "Kd-Nr " + a.knr, size: 7.8, color: "#8a9199" });
-        const cells = [[], cTime, cWho, cWork, cNote];
-        const lead = l => l.size * 1.28;
-        const rh = Math.max(24, ...cells.map(c => c.reduce((n, l) => n + lead(l), 0))) + 2 * padY;
+    /* Je mehr Termine am Tag, desto kompakter (feine Abstufung) – damit alles auf EINE A4-Seite passt */
+    const levelFor = fs => ({
+      fs,
+      padY: Math.max(1.2, 5 * (fs - 0.6) / 0.4),
+      minH: Math.max(10, 24 * (fs - 0.55) / 0.45),
+      compact: fs < 0.88,
+      notes: fs >= 0.96 ? 99 : fs >= 0.9 ? 3 : fs >= 0.8 ? 2 : fs >= 0.72 ? 1 : 0,
+      kd: fs >= 0.78,
+      extra: fs >= 0.88
+    });
+    const HDR_END = MT + 28 + 14 + 8 + 10 + 18;
+    const lead = l => l.size * 1.28;
+    const line1 = (t, size, bold, color) => ({ size, runs: [{ t, bold, color }] });
 
-        if (y + rh > H - MB) { endPage(); header(day, true); }
+    const clip = (lines, n, size, bold) => {
+      if (n >= lines.length) return lines;
+      const out = lines.slice(0, n);
+      if (out.length) {
+        let t = out[out.length - 1];
+        while (t.length > 1 && wid(t + "…", bold, size) > cols[4].w - 2 * padX) t = t.slice(0, -1);
+        out[out.length - 1] = t + "…";
+      }
+      return out;
+    };
 
-        // Kästchen zum Abhaken
-        R(ML + 7, y + padY, 11, 11, { stroke: "#22272d", lw: 1 });
-        let cx = ML;
-        cells.forEach((c, i) => {
-          let yy = y + padY;
-          c.forEach(l => { yy += lead(l); T(cx + padX, yy - l.size * 0.28, l.t, { size: l.size, bold: l.bold, color: l.color }); });
-          cx += cols[i].w;
+    const makeRows = (day, lv) => day.items.map(a => {
+      const k = a.kid && window.SPKunden ? window.SPKunden.get(a.kid) : null;
+      const fs = lv.fs;
+      const wWho = cols[2].w - 2 * padX, wWork = cols[3].w - 2 * padX, wNote = cols[4].w - 2 * padX;
+      const addr = [[a.street, a.house].filter(Boolean).join(" "), [a.zip, a.city].filter(Boolean).join(" ")].filter(Boolean);
+
+      const cTime = [line1(a.time, 10.5 * fs, true)];
+      if (lv.extra) cTime.push(line1("bis " + endTime(a), 8 * fs, false, "#6c757d"));
+      else cTime[0] = line1(a.time + "–" + endTime(a), 8.4 * fs, true);
+
+      const cWho = [];
+      const name = a.customer || "(ohne Namen)";
+      if (lv.compact) {
+        const ad = addr.join(", ");
+        const sz = 9.4 * fs;
+        if (ad && wid(name, true, sz) + wid("  " + ad, false, sz * 0.92) <= wWho) {
+          cWho.push({ size: sz, runs: [{ t: name, bold: true }, { t: "  " + ad, color: "#4f5962", scale: 0.92 }] });
+        } else {
+          wrap(name, sz, true, wWho).forEach(t => cWho.push(line1(t, sz, true)));
+          if (ad) wrap(ad, sz * 0.92, false, wWho).forEach(t => cWho.push(line1(t, sz * 0.92, false, "#4f5962")));
+        }
+      } else {
+        wrap(name, 9.8 * fs, true, wWho).forEach(t => cWho.push(line1(t, 9.8 * fs, true)));
+        if (addr.length) wrap(addr.join(", "), 8.8 * fs, false, wWho).forEach(t => cWho.push(line1(t, 8.8 * fs, false, "#4f5962")));
+      }
+
+      const cWork = [];
+      const wt = worksText(a);
+      if (!wt.length) cWork.push(line1("–", 9 * fs, false, "#8a9199"));
+      else if (lv.compact) wrap(wt.join(", "), 8.8 * fs, false, wWork).forEach(t => cWork.push(line1(t, 8.8 * fs, false)));
+      else wt.forEach(w => wrap(w, 9 * fs, false, wWork).forEach(t => cWork.push(line1(t, 9 * fs, false))));
+
+      let cNote = [];
+      if (k && k.phone) cNote.push(line1("Tel. " + k.phone, 8.6 * fs, true));
+      if (a.notes) cNote = cNote.concat(wrap(a.notes, 8.4 * fs, false, wNote).map(t => line1(t, 8.4 * fs, false)));
+      if (lv.notes < 99) {
+        // Telefon bleibt, Bemerkung wird gekürzt
+        const ph = cNote.filter(l => l.runs[0].bold);
+        const rest = cNote.filter(l => !l.runs[0].bold);
+        cNote = ph.concat(clip(rest, Math.max(0, lv.notes - (ph.length ? 0 : 0)), 8.4 * fs, false));
+        if (lv.notes === 0) cNote = ph;
+      }
+      if (lv.kd && a.knr) cNote.push(line1("Kd-Nr " + a.knr, 7.8 * fs, false, "#8a9199"));
+
+      const cells = [[], cTime, cWho, cWork, cNote];
+      const rh = Math.max(lv.minH, ...cells.map(c => c.reduce((n, l) => n + lead(l), 0))) + 2 * lv.padY;
+      return { cells, rh, padY: lv.padY, box: Math.min(11, 11 * Math.max(fs, 0.8)) };
+    });
+
+    const drawRow = r => {
+      const bx = r.box;
+      R(ML + 7, y + r.padY, bx, bx, { stroke: "#22272d", lw: 1 });
+      let cx = ML;
+      r.cells.forEach((c, i) => {
+        let yy = y + r.padY;
+        c.forEach(l => {
+          yy += lead(l);
+          let px = cx + padX;
+          l.runs.forEach(run => {
+            const sz = l.size * (run.scale || 1);
+            T(px, yy - l.size * 0.28, run.t, { size: sz, bold: run.bold, color: run.color });
+            px += wid(run.t, run.bold, sz);
+          });
         });
-        y += rh;
-        L(ML, y, ML + CW, y, "#d5d9dd", 0.5);
+        cx += cols[i].w;
+      });
+      y += r.rh;
+      L(ML, y, ML + CW, y, "#d5d9dd", 0.5);
+    };
+
+    days.forEach(day => {
+      // kleinste nötige Stufe wählen, bei der der ganze Tag auf eine Seite passt
+      let rows = null;
+      for (let fs = 1; fs >= 0.64; fs = Math.round((fs - 0.02) * 100) / 100) {
+        rows = makeRows(day, levelFor(fs));
+        if (HDR_END + rows.reduce((n, r) => n + r.rh, 0) <= H - MB) break;
+      }
+      header(day, false);
+      rows.forEach(r => {
+        // nur im Extremfall (mehr Termine als auf eine Seite passen) wird eine zweite Seite begonnen
+        if (y + r.rh > H - MB) { endPage(); header(day, true); }
+        drawRow(r);
       });
       endPage();
     });
@@ -6846,7 +6994,8 @@
     if (!date || !time) return alert("Bitte Datum und Uhrzeit angeben.");
     const holiday=holidayMap(new Date(date).getFullYear()).get(date);
     if (holiday) return alert(`Am ${fmtDate(date)} ist ${holiday}. Termine an Feiertagen sind standardmäßig gesperrt.`);
-    if (hourCount(date,time,moduleState.editingId) >= 4) return alert("Für diese Stunde sind bereits 4 Termine eingetragen.");
+    const clash = overlapWith(date, time, Number($("spAptDuration").value) || 15, moduleState.editingId);
+    if (clash && !confirm(`Der Termin überschneidet sich mit dem Termin um ${clash.time} Uhr (${clash.customer || "ohne Namen"}). Trotzdem speichern?`)) return;
     const item={ id:moduleState.editingId || uuid(), date,time, customer:$("spAptCustomer").value.trim(), street:$("spAptStreet").value.trim(), house:$("spAptHouse").value.trim(), zip:$("spAptZip").value.trim(), city:$("spAptCity").value.trim(), duration:Number($("spAptDuration").value)||15, notes:$("spAptNotes").value.trim(), works:selectedWorks(), workOther:$("spWorkOtherText").value.trim(), kid:moduleState.aptCustomer?.id||"", knr:moduleState.aptCustomer?.nr||"", updatedAt:new Date().toISOString() };
     const list=appointments(); const idx=list.findIndex(x=>x.id===item.id); if(idx>=0) list[idx]=item; else list.push(item);
     persist({appointments:list}); moduleState.selectedId=item.id; moduleState.date=fromIso(date); closeModal(); render();
@@ -7218,7 +7367,7 @@
       addrLines: [[a.street, a.house].filter(Boolean).join(" "), [a.zip, a.city].filter(Boolean).join(" ")].filter(Boolean),
       notes: a.notes || "",
       works: proposalWorks(a),
-      hint: Array.isArray(a.works) && a.works.includes("feststoff") ? "Die Messung dauert ca. 1 Stunde. Bitte bereiten Sie Ihren Pelletkessel bzw. Scheitholzkessel für die Messung vor." : ""
+      hint: Array.isArray(a.works) && a.works.includes("feststoff") ? "Die Messung dauert ca. " + durText(workMinutesCfg().feststoff) + ". Bitte bereiten Sie Ihren Pelletkessel bzw. Scheitholzkessel für die Messung vor." : ""
     };
   }
 
