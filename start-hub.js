@@ -43,6 +43,13 @@
       title: "Kundenverwaltung",
       text: "Kunden mit Kundennummer anlegen und suchen – für Termine und Rechner.",
       show: ["#kundenView"]
+    },
+    {
+      id: "sicherung",
+      icon: "\u{1F4BE}",
+      title: "Datensicherung",
+      text: "Alles in einer Datei sichern und wieder einlesen – Termine, Kunden, Projekte, Einstellungen.",
+      show: ["#sicherungView"]
     }
   ];
 
