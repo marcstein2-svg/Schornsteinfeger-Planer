@@ -1420,6 +1420,18 @@
     .sp-auto-quick > span { font-weight: 800; font-size: .82rem; }
     .sp-auto-warn { margin-top: 8px; padding: 8px 10px; border: 1px solid #e9c78d; border-radius: 10px; background: #fff4e0; color: #7a4600; }
     .sp-linkbtn { border: 0; background: none; padding: 0; font: inherit; font-weight: 800; color: #7d5b20; text-decoration: underline; cursor: pointer; }
+    .sp-hour-body > .sp-add { align-self: start; min-height: 40px; }
+    .sp-appt-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .sp-appt.done { border-left-color: #3f8f5b; background: #f3faf5; }
+    .sp-appt.done .sp-appt-time { color: #2e6f45; }
+    .sp-appt-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sp-act { min-height: 38px; padding: 5px 12px; border: 1px solid #c9ced2; border-radius: 9px; background: #fff; font: inherit; font-size: .8rem; font-weight: 750; color: var(--text); cursor: pointer; }
+    .sp-act:hover { border-color: var(--gold); }
+    .sp-act.done { border-color: #3f8f5b; background: #e7f4ec; color: #2e6f45; }
+    .sp-inv-choices { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .sp-inv { min-height: 56px; padding: 10px 14px; border: 2px solid #c9ced2; border-radius: 12px; background: #fff; font: inherit; font-size: 1rem; font-weight: 800; text-align: left; color: var(--text); cursor: pointer; }
+    .sp-inv:hover { border-color: var(--gold); background: #fffaf0; }
+    .sp-inv.on { border-color: #3f8f5b; background: #e7f4ec; }
     .sp-modal-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
     .sp-danger { color: var(--red); }
 
@@ -1874,10 +1886,12 @@
             <div class="field"><label for="spBusinessAddress">Betriebsanschrift</label><input id="spBusinessAddress" type="text" placeholder="Straße, PLZ Ort"></div>
           </div>
           <div class="sp-day-print">
-            <div class="field"><label for="spDayDate">Tagesübersicht für Tag (Zettel zum Abhaken)</label><input id="spDayDate" type="date"></div>
+            <div class="field"><label for="spDayDate">Tag für Tagesübersicht / Erledigt-Liste</label><input id="spDayDate" type="date"></div>
             <div class="form-actions">
               <button class="btn btn-primary" type="button" id="spPrintDay">📋 Tagesübersicht drucken</button>
               <button class="btn btn-light" type="button" id="spPrintDays">📋 Alle Tage im Zeitraum (je Tag ein Blatt)</button>
+              <button class="btn btn-gold" type="button" id="spPrintDone">✅ Erledigt-Liste drucken (für den Chef)</button>
+              <button class="btn btn-light" type="button" id="spPrintDoneRange">✅ Erledigt-Liste für den Zeitraum</button>
             </div>
           </div>
           <div class="form-actions">
@@ -3209,6 +3223,44 @@
 </main>
 
 <!-- TERMINMODAL -->
+<div class="sp-modal-backdrop" id="spDoneModal" hidden>
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spDoneTitle" style="max-width:520px">
+    <h3 id="spDoneTitle">Termin erledigt</h3>
+    <p class="sp-muted" id="spDoneWho" style="margin:-4px 0 12px"></p>
+    <div class="sp-works-title">Wie bekommt der Kunde die Rechnung? (Antippen speichert)</div>
+    <div class="sp-inv-choices">
+      <button type="button" class="sp-inv" data-inv="post">✉ Per Post</button>
+      <button type="button" class="sp-inv" data-inv="hinterlegt">🧾 Rechnung hinterlegt – Kunde überweist</button>
+      <button type="button" class="sp-inv" data-inv="mail">📧 Per E-Mail</button>
+    </div>
+    <div class="sp-modal-actions">
+      <button class="btn btn-light" type="button" id="spDoneCancel">Abbrechen</button>
+      <button class="btn btn-danger" type="button" id="spDoneUndo" hidden>Als nicht erledigt markieren</button>
+    </div>
+  </div>
+</div>
+
+<div class="sp-modal-backdrop" id="spMoveModal" hidden>
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spMoveTitle" style="max-width:520px">
+    <h3 id="spMoveTitle">Termin verschieben</h3>
+    <p class="sp-muted" id="spMoveWho" style="margin:-4px 0 4px;font-weight:800"></p>
+    <p class="sp-muted" id="spMoveFrom" style="margin:0 0 12px"></p>
+    <div class="sp-form-grid">
+      <div class="field"><label for="spMoveDate">Neues Datum</label><input id="spMoveDate" type="date"></div>
+      <div class="field"><label for="spMoveTime">Neue Uhrzeit</label><input id="spMoveTime" type="time" step="60"></div>
+    </div>
+    <div class="sp-work-chips" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="sp-chip" data-mv="next">Nächster Arbeitstag</button>
+      <button type="button" class="sp-chip" data-mv="week">+ 1 Woche</button>
+    </div>
+    <div class="sp-auto-warn" id="spMoveInfo" hidden></div>
+    <div class="sp-modal-actions">
+      <button class="btn btn-light" type="button" id="spMoveCancel">Abbrechen</button>
+      <button class="btn btn-primary" type="button" id="spMoveSave">Verschieben</button>
+    </div>
+  </div>
+</div>
+
 <div class="sp-modal-backdrop" id="spTimesModal" hidden style="z-index:10002">
   <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spTimesTitle">
     <h3 id="spTimesTitle">Zeiten je Tätigkeit</h3>
@@ -3288,6 +3340,8 @@
     <div class="field" style="margin-top:10px"><label for="spAptNotes">Besonderheiten</label><textarea id="spAptNotes" rows="4" placeholder="Zugang, Besonderheiten, Hinweise …"></textarea></div>
     <div class="sp-modal-actions">
       <button class="btn btn-light" type="button" id="spCancelAppointment">Abbrechen</button>
+      <button class="btn btn-light" type="button" id="spMoveFromApt" hidden>⇄ Verschieben</button>
+      <button class="btn btn-light" type="button" id="spDoneFromApt" hidden>✔ Erledigt …</button>
       <button class="btn btn-danger" type="button" id="spDeleteAppointment" hidden>Löschen</button>
       <button class="btn btn-primary" type="button" id="spSaveAppointment">Termin speichern</button>
     </div>
@@ -6287,6 +6341,18 @@
     $("spNewAppointment").addEventListener("click", () => openModal(iso(moduleState.date), "09:00"));
     document.querySelectorAll("[data-sp-view]").forEach(b => b.addEventListener("click", () => { moduleState.view = b.dataset.spView; render(); }));
     $("spAptPickCustomer").addEventListener("click", pickCustomerForAppointment);
+    $("spDoneCancel").addEventListener("click", closeDoneModal);
+    $("spDoneUndo").addEventListener("click", unsetDone);
+    document.querySelectorAll(".sp-inv").forEach(b => b.addEventListener("click", () => setDone(b.dataset.inv)));
+    $("spMoveCancel").addEventListener("click", closeMoveModal);
+    $("spMoveSave").addEventListener("click", saveMove);
+    $("spMoveDate").addEventListener("change", () => { suggestMoveTime(); updateMoveInfo(); });
+    $("spMoveTime").addEventListener("input", updateMoveInfo);
+    document.querySelectorAll("[data-mv]").forEach(b => b.addEventListener("click", () => moveQuick(b.dataset.mv)));
+    $("spMoveFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openMoveModal(id); });
+    $("spDoneFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openDoneModal(id); });
+    $("spPrintDone").addEventListener("click", () => printDone(false));
+    $("spPrintDoneRange").addEventListener("click", () => printDone(true));
     $("spPrintDay").addEventListener("click", printDay);
     $("spPrintDays").addEventListener("click", printDayRange);
     $("spDayDate").addEventListener("change", () => { moduleState.dayManual = true; });
@@ -6322,9 +6388,11 @@
     ["spProposalFrom","spProposalTo"].forEach(id => $(id).addEventListener("change", renderProposalList));
     $("year").addEventListener("change", () => render());
     $("state").addEventListener("change", () => render());
-    document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("spAppointmentModal").hidden) closeModal(); if (e.key === "Escape" && !$("spAutoModal").hidden && !document.querySelector(".kv-overlay")) closeAutoModal(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("spAppointmentModal").hidden) closeModal(); if (e.key === "Escape" && !$("spAutoModal").hidden && !document.querySelector(".kv-overlay")) closeAutoModal(); if (e.key === "Escape" && !$("spDoneModal").hidden) closeDoneModal(); if (e.key === "Escape" && !$("spMoveModal").hidden) closeMoveModal(); });
     document.addEventListener("click", e => {
       const dayBtn = e.target.closest("[data-sp-day]"); if (dayBtn) { moduleState.date = fromIso(dayBtn.dataset.spDay); moduleState.view = "day"; render(); return; }
+      const dn = e.target.closest("[data-sp-done]"); if (dn) { openDoneModal(dn.dataset.spDone); return; }
+      const mv = e.target.closest("[data-sp-move]"); if (mv) { openMoveModal(mv.dataset.spMove); return; }
       const open = e.target.closest("[data-sp-open]"); if (open) openModal(open.dataset.date, open.dataset.time, open.dataset.spOpen);
       const select = e.target.closest("[data-sp-select]"); if (select) { moduleState.selectedId = select.dataset.spSelect; renderProposalList(); updateActionState(); }
       const edit = e.target.closest("[data-sp-edit]"); if (edit) openModal("", "", edit.dataset.spEdit);
@@ -6353,10 +6421,15 @@
   function addrLine(a) {
     return [a.street && `${a.street} ${a.house || ""}`.trim(), [a.zip, a.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
   }
+  const INV_LABEL = { post: "per Post", hinterlegt: "Rechnung hinterlegt – Kunde überweist", mail: "per E-Mail" };
+  const INV_SHORT = { post: "Post", hinterlegt: "hinterlegt", mail: "E-Mail" };
   function apptCard(a, compact) {
     const addr = addrLine(a);
     const title = (a.customer || "Ohne Kundennamen") + (addr ? " – " + addr : "");
-    return `<button type="button" class="sp-appt${compact ? " compact" : ""}${a.id === moduleState.selectedId ? " selected" : ""}" data-sp-open="${esc(a.id)}" data-date="${esc(a.date)}" data-time="${esc(a.time)}" title="${esc(title)}"><span class="sp-appt-time">${esc(a.time)}</span><span class="sp-appt-main"><strong>${esc(a.customer || "Ohne Kundennamen")}</strong>${compact || !addr ? "" : `<small>${esc(addr)}</small>`}</span></button>`;
+    const btn = `<button type="button" class="sp-appt${compact ? " compact" : ""}${a.id === moduleState.selectedId ? " selected" : ""}${a.done ? " done" : ""}" data-sp-open="${esc(a.id)}" data-date="${esc(a.date)}" data-time="${esc(a.time)}" title="${esc(title)}"><span class="sp-appt-time">${a.done ? "✔ " : ""}${esc(a.time)}</span><span class="sp-appt-main"><strong>${esc(a.customer || "Ohne Kundennamen")}</strong>${compact || !addr ? "" : `<small>${esc(addr)}</small>`}</span></button>`;
+    if (compact) return btn;
+    const inv = a.done && a.invoice ? ` · ${INV_SHORT[a.invoice] || ""}` : "";
+    return `<div class="sp-appt-wrap">${btn}<div class="sp-appt-actions"><button type="button" class="sp-act${a.done ? " done" : ""}" data-sp-done="${esc(a.id)}">${a.done ? "✔ Erledigt" + esc(inv) : "☐ Erledigt?"}</button><button type="button" class="sp-act" data-sp-move="${esc(a.id)}">⇄ Verschieben</button></div></div>`;
   }
   function freeTimeIn(day, hour) {
     const used = appointments().filter(a => a.date === day && Number(a.time.slice(0, 2)) === hour).map(a => a.time);
@@ -6387,7 +6460,7 @@
     for (let hour = 0; hour <= 23; hour++) {
       const aps = list.filter(a => Number(a.time.slice(0, 2)) === hour);
       if (!aps.length && !(moduleState.showEmpty && hour >= 6 && hour <= 20)) continue;
-      const canAdd = !h && aps.length < 4;
+      const canAdd = !h;
       const add = canAdd ? addBtn(key, freeTimeIn(key, hour), aps.length ? "+" : "+ frei", `Termin um ${pad(hour)} Uhr anlegen`) : "";
       html += `<div class="sp-hour${aps.length ? "" : " empty"}"><div class="sp-hour-time">${pad(hour)}:00</div><div class="sp-hour-body">${aps.map(a => apptCard(a)).join("")}${add}</div></div>`;
     }
@@ -6451,6 +6524,8 @@
     moduleState.aptCustomer = a?.kid ? { id: a.kid, nr: a.knr || "" } : null;
     showAptCustomerInfo();
     $("spDeleteAppointment").hidden = !a;
+    $("spMoveFromApt").hidden = !a;
+    $("spDoneFromApt").hidden = !a;
     $("spAppointmentModal").hidden = false;
     $("spAptCustomer").focus();
   }
@@ -6731,6 +6806,88 @@
     updateAuto();
   }
 
+  /* ================= Erledigt abhaken (mit Rechnungsart) ================= */
+  function openDoneModal(id) {
+    const a = appointments().find(x => x.id === id);
+    if (!a) return;
+    moduleState.doneId = id;
+    $("spDoneWho").textContent = `${a.customer || "Ohne Namen"} – ${fmtDate(a.date)}, ${a.time} Uhr`;
+    $("spDoneUndo").hidden = !a.done;
+    document.querySelectorAll(".sp-inv").forEach(b => b.classList.toggle("on", !!a.done && a.invoice === b.dataset.inv));
+    $("spDoneModal").hidden = false;
+  }
+  function closeDoneModal() { $("spDoneModal").hidden = true; moduleState.doneId = null; }
+  function setDone(invoice) {
+    const id = moduleState.doneId;
+    persist({ appointments: appointments().map(a => a.id === id ? { ...a, done: true, doneAt: new Date().toISOString(), invoice } : a) });
+    closeDoneModal(); render();
+  }
+  function unsetDone() {
+    const id = moduleState.doneId;
+    persist({ appointments: appointments().map(a => { if (a.id !== id) return a; const { done, doneAt, invoice, ...rest } = a; return rest; }) });
+    closeDoneModal(); render();
+  }
+
+  /* ================= Termin verschieben ================= */
+  function openMoveModal(id) {
+    const a = appointments().find(x => x.id === id);
+    if (!a) return;
+    moduleState.moveId = id;
+    $("spMoveWho").textContent = `${a.customer || "Ohne Namen"}${addrLine(a) ? " – " + addrLine(a) : ""}`;
+    $("spMoveFrom").textContent = `Bisher: ${fmtDate(a.date)}, ${a.time} Uhr (${Number(a.duration) || 15} Min.)`;
+    $("spMoveDate").value = a.date;
+    $("spMoveTime").value = a.time;
+    $("spMoveModal").hidden = false;
+    updateMoveInfo();
+  }
+  function closeMoveModal() { $("spMoveModal").hidden = true; moduleState.moveId = null; }
+  function moveTarget() {
+    const a = appointments().find(x => x.id === moduleState.moveId);
+    const date = $("spMoveDate").value, time = $("spMoveTime").value;
+    return { a, date, time, dur: Number(a && a.duration) || 15 };
+  }
+  /* Zeitpunkt mit Hinweisen prüfen (Feiertag, Wochenende, Überschneidung) */
+  function updateMoveInfo() {
+    const { a, date, time, dur } = moveTarget();
+    const box = $("spMoveInfo");
+    if (!a || !date || !time) { box.hidden = true; $("spMoveSave").disabled = true; return; }
+    const holiday = holidayMap(fromIso(date).getFullYear()).get(date);
+    const wd = fromIso(date).getDay();
+    const clash = overlapWith(date, time, dur, a.id);
+    const msg = [];
+    if (holiday) msg.push(`Feiertag: ${holiday} – an Feiertagen kann kein Termin liegen.`);
+    else {
+      if (wd === 0 || wd === 6) msg.push("Der gewählte Tag ist ein Wochenende.");
+      if (clash) msg.push(`Überschneidung mit dem Termin um ${clash.time} Uhr (${clash.customer || "ohne Namen"}).`);
+    }
+    box.textContent = msg.join(" ");
+    box.hidden = !msg.length;
+    $("spMoveSave").disabled = !!holiday || (date === a.date && time === a.time);
+  }
+  /* freie Uhrzeit am Zieltag vorschlagen, wenn die bisherige belegt ist */
+  function suggestMoveTime() {
+    const { a, date, time, dur } = moveTarget();
+    if (!a || !date || !time || !overlapWith(date, time, dur, a.id)) return;
+    for (let m = 8 * 60; m + dur <= 18 * 60; m += 5) if (!overlapWith(date, fromMin(m), dur, a.id)) { $("spMoveTime").value = fromMin(m); return; }
+  }
+  function moveQuick(kind) {
+    const cur = fromIso($("spMoveDate").value || iso(new Date()));
+    let d = addDays(cur, kind === "week" ? 7 : 1);
+    if (kind === "next") while (d.getDay() === 0 || d.getDay() === 6 || holidayMap(d.getFullYear()).get(iso(d))) d = addDays(d, 1);
+    $("spMoveDate").value = iso(d);
+    suggestMoveTime(); updateMoveInfo();
+  }
+  function saveMove() {
+    const { a, date, time, dur } = moveTarget();
+    if (!a || !date || !time) return;
+    if (holidayMap(fromIso(date).getFullYear()).get(date)) return alert("An Feiertagen kann kein Termin liegen.");
+    const clash = overlapWith(date, time, dur, a.id);
+    if (clash && !confirm(`Der Termin überschneidet sich mit dem Termin um ${clash.time} Uhr (${clash.customer || "ohne Namen"}). Trotzdem verschieben?`)) return;
+    persist({ appointments: appointments().map(x => x.id === a.id ? { ...x, date, time, updatedAt: new Date().toISOString() } : x) });
+    moduleState.date = fromIso(date);
+    closeMoveModal(); render();
+  }
+
   /* ================= Tagesübersicht (Zettel zum Abhaken) ================= */
   const WORK_TEXT = { kehrung: "Kehrung", messung: "Messung", feststoff: "Feststoffmessung", schau: "Feuerstättenschau" };
   function worksText(a) {
@@ -6743,7 +6900,8 @@
   function endTime(a) { return fromMin(toMin(a.time) + (Number(a.duration) || 15)); }
 
   /* Eigenes PDF: A4 hoch, je Tag ein Blatt (bei vielen Terminen mehrere Seiten) */
-  function buildDayPdf(days, s) {
+  function buildDayPdf(days, s, mode) {
+    const DONE = mode === "done";
     const W = 595.28, H = 841.89, ML = 36, MT = 38, MB = 44, CW = W - 2 * ML;
     const cpMap = { "€": 0x80, "„": 0x84, "…": 0x85, "‘": 0x91, "’": 0x92, "“": 0x93, "”": 0x94, "•": 0x95, "–": 0x96, "—": 0x97 };
     const tr = { "≥": ">=", "≤": "<=", "→": "->", "←": "<-", "↔": "<->", "✓": "", "✗": "", "−": "-", "\u2009": " ", "\u202f": " ", "\u200b": "" };
@@ -6795,17 +6953,17 @@
 
     const biz = [s.businessName, s.employeeName].filter(Boolean).join(" · ");
     const cols = [
-      { w: 26, h: "" }, { w: 56, h: "Uhrzeit" }, { w: 196, h: "Kunde / Adresse" }, { w: 118, h: "Tätigkeit" }, { w: CW - 26 - 56 - 196 - 118, h: "Hinweis" }
+      { w: 26, h: "" }, { w: 56, h: "Uhrzeit" }, { w: DONE ? 182 : 196, h: "Kunde / Adresse" }, { w: DONE ? 108 : 118, h: "Tätigkeit" }, { w: CW - 26 - 56 - (DONE ? 182 : 196) - (DONE ? 108 : 118), h: DONE ? "Rechnung" : "Hinweis" }
     ];
     const padX = 5, padY = 5;
 
     const header = (day, cont) => {
       y = MT;
       curLabel = fmtDate(day.date);
-      T(ML, y + 8, "TAGESÜBERSICHT" + (cont ? " – FORTSETZUNG" : ""), { size: 8.5, bold: true, color: "#9a7220" });
+      T(ML, y + 8, (DONE ? "ERLEDIGT-LISTE" : "TAGESÜBERSICHT") + (cont ? " – FORTSETZUNG" : ""), { size: 8.5, bold: true, color: "#9a7220" });
       y += 28;
       T(ML, y, fmtDate(day.date), { size: 17, bold: true });
-      T(ML + CW, y, day.items.length + (day.items.length === 1 ? " Termin" : " Termine"), { size: 10.5, bold: true, align: "right" });
+      T(ML + CW, y, day.items.length + (DONE ? " erledigt" : day.items.length === 1 ? " Termin" : " Termine"), { size: 10.5, bold: true, align: "right" });
       y += 14;
       if (biz) T(ML, y, biz, { size: 8.8, color: "#6c757d" });
       y += 8;
@@ -6876,6 +7034,11 @@
       else wt.forEach(w => wrap(w, 9 * fs, false, wWork).forEach(t => cWork.push(line1(t, 9 * fs, false))));
 
       let cNote = [];
+      if (DONE) {
+        const lab = a.invoice ? INV_LABEL[a.invoice] : "nicht angegeben";
+        wrap(lab, 9 * fs, !!a.invoice, wNote).forEach(t => cNote.push(line1(t, 9 * fs, !!a.invoice, a.invoice ? undefined : "#a02f2f")));
+        if (lv.kd && a.knr) cNote.push(line1("Kd-Nr " + a.knr, 7.8 * fs, false, "#8a9199"));
+      } else {
       if (k && k.phone) cNote.push(line1("Tel. " + k.phone, 8.6 * fs, true));
       if (a.notes) cNote = cNote.concat(wrap(a.notes, 8.4 * fs, false, wNote).map(t => line1(t, 8.4 * fs, false)));
       if (lv.notes < 99) {
@@ -6886,15 +7049,21 @@
         if (lv.notes === 0) cNote = ph;
       }
       if (lv.kd && a.knr) cNote.push(line1("Kd-Nr " + a.knr, 7.8 * fs, false, "#8a9199"));
+      }
 
       const cells = [[], cTime, cWho, cWork, cNote];
       const rh = Math.max(lv.minH, ...cells.map(c => c.reduce((n, l) => n + lead(l), 0))) + 2 * lv.padY;
-      return { cells, rh, padY: lv.padY, box: Math.min(11, 11 * Math.max(fs, 0.8)) };
+      return { cells, rh, padY: lv.padY, box: Math.min(11, 11 * Math.max(fs, 0.8)), done: DONE || !!a.done };
     });
 
     const drawRow = r => {
       const bx = r.box;
       R(ML + 7, y + r.padY, bx, bx, { stroke: "#22272d", lw: 1 });
+      if (r.done) {   // Häkchen im Kästchen
+        const x0 = ML + 7, y0 = y + r.padY;
+        L(x0 + bx * 0.18, y0 + bx * 0.55, x0 + bx * 0.42, y0 + bx * 0.82, "#2e6f45", 1.6);
+        L(x0 + bx * 0.42, y0 + bx * 0.82, x0 + bx * 0.9, y0 + bx * 0.12, "#2e6f45", 1.6);
+      }
       let cx = ML;
       r.cells.forEach((c, i) => {
         let yy = y + r.padY;
@@ -6916,9 +7085,10 @@
     days.forEach(day => {
       // kleinste nötige Stufe wählen, bei der der ganze Tag auf eine Seite passt
       let rows = null;
+      const SUM_H = DONE ? 64 : 0;   // Platz für die Zusammenfassung unter der Liste
       for (let fs = 1; fs >= 0.64; fs = Math.round((fs - 0.02) * 100) / 100) {
         rows = makeRows(day, levelFor(fs));
-        if (HDR_END + rows.reduce((n, r) => n + r.rh, 0) <= H - MB) break;
+        if (HDR_END + rows.reduce((n, r) => n + r.rh, 0) + SUM_H <= H - MB) break;
       }
       header(day, false);
       rows.forEach(r => {
@@ -6926,6 +7096,17 @@
         if (y + r.rh > H - MB) { endPage(); header(day, true); }
         drawRow(r);
       });
+      if (DONE) {
+        const cnt = { post: 0, hinterlegt: 0, mail: 0, none: 0 };
+        day.items.forEach(a => { cnt[a.invoice && cnt[a.invoice] !== undefined ? a.invoice : "none"]++; });
+        if (y + SUM_H > H - MB) { endPage(); header(day, true); }
+        y += 12;
+        R(ML, y, CW, 46, { fill: "#f4f5f6" });
+        T(ML + 10, y + 15, "Rechnung:  per Post " + cnt.post + "   ·   hinterlegt (Kunde überweist) " + cnt.hinterlegt + "   ·   per E-Mail " + cnt.mail + (cnt.none ? "   ·   nicht angegeben " + cnt.none : ""), { size: 9.2, bold: true });
+        const open = (day.total || day.items.length) - day.items.length;
+        T(ML + 10, y + 32, "Erledigt: " + day.items.length + " von " + (day.total || day.items.length) + " Terminen" + (open > 0 ? "   ·   noch offen: " + open : "   ·   alle Termine erledigt"), { size: 9, color: "#4f5962" });
+        y += 46;
+      }
       endPage();
     });
 
@@ -6933,7 +7114,7 @@
     const total = pages.length;
     const streams = pages.map((p, i) => p.ops + "\n" + [
       col("#c9ced2") + " RG 0.5 w " + f(ML) + " " + f(H - (H - 34)) + " m " + f(ML + CW) + " " + f(H - (H - 34)) + " l S",
-      "BT /F1 7.8 Tf " + col("#6c757d") + " rg " + f(ML) + " " + f(H - (H - 24)) + " Td (" + enc(nz("Tagesübersicht · " + p.label)) + ") Tj ET",
+      "BT /F1 7.8 Tf " + col("#6c757d") + " rg " + f(ML) + " " + f(H - (H - 24)) + " Td (" + enc(nz((DONE ? "Erledigt-Liste · " : "Tagesübersicht · ") + p.label)) + ") Tj ET",
       "BT /F1 7.8 Tf " + col("#6c757d") + " rg " + f(ML + CW - wid("Seite " + (i + 1) + " / " + total, false, 7.8)) + " " + f(H - (H - 24)) + " Td (Seite " + (i + 1) + " / " + total + ") Tj ET"
     ].join("\n"));
 
@@ -6965,15 +7146,22 @@
     setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
   }
 
-  function printDays(dates) {
+  function printDays(dates, mode) {
     const all = appointments();
-    const days = dates.map(date => ({
-      date,
-      items: all.filter(a => a.date === date).sort((a, b) => (a.time || "").localeCompare(b.time || "") || (a.customer || "").localeCompare(b.customer || "", "de"))
-    })).filter(d => d.items.length);
-    if (!days.length) return alert(dates.length === 1 ? "Für diesen Tag sind keine Termine eingetragen." : "Im gewählten Zeitraum sind keine Termine eingetragen.");
-    const blob = buildDayPdf(days, settings());
-    const name = "Tagesuebersicht_" + days[0].date + (days.length > 1 ? "_bis_" + days[days.length - 1].date : "") + ".pdf";
+    const done = mode === "done";
+    const days = dates.map(date => {
+      const dayAll = all.filter(a => a.date === date);
+      return {
+        date,
+        total: dayAll.length,
+        items: dayAll.filter(a => !done || a.done).sort((a, b) => (a.time || "").localeCompare(b.time || "") || (a.customer || "").localeCompare(b.customer || "", "de"))
+      };
+    }).filter(d => d.items.length);
+    if (!days.length) return alert(done
+      ? (dates.length === 1 ? "Für diesen Tag sind keine erledigten Termine eingetragen. Hake die Termine im Kalender mit „☐ Erledigt?“ ab." : "Im gewählten Zeitraum sind keine erledigten Termine eingetragen.")
+      : (dates.length === 1 ? "Für diesen Tag sind keine Termine eingetragen." : "Im gewählten Zeitraum sind keine Termine eingetragen."));
+    const blob = buildDayPdf(days, settings(), mode);
+    const name = (done ? "Erledigt-Liste_" : "Tagesuebersicht_") + days[0].date + (days.length > 1 ? "_bis_" + days[days.length - 1].date : "") + ".pdf";
     if (window.navigator.standalone === true || isIOSDevice()) sharePdf(blob, name); else openPdfTab(blob, name);
   }
   function printDay() {
@@ -6981,12 +7169,19 @@
     if (!d) return alert("Bitte einen Tag wählen.");
     printDays([d]);
   }
-  function printDayRange() {
+  function printDayRange() { printDayRangeMode(); }
+  function printDayRangeMode(mode) {
     const from = $("spProposalFrom").value, to = $("spProposalTo").value;
     if (!from || !to || from > to) return alert("Bitte oben bei „Von“ und „Bis“ einen gültigen Zeitraum wählen.");
     const dates = [];
     for (let d = fromIso(from); iso(d) <= to; d = addDays(d, 1)) dates.push(iso(d));
-    printDays(dates);
+    printDays(dates, mode);
+  }
+  function printDone(range) {
+    if (range) return printDayRangeMode("done");
+    const d = $("spDayDate").value;
+    if (!d) return alert("Bitte einen Tag wählen.");
+    printDays([d], "done");
   }
 
   function saveAppointment() {
@@ -6997,7 +7192,7 @@
     const clash = overlapWith(date, time, Number($("spAptDuration").value) || 15, moduleState.editingId);
     if (clash && !confirm(`Der Termin überschneidet sich mit dem Termin um ${clash.time} Uhr (${clash.customer || "ohne Namen"}). Trotzdem speichern?`)) return;
     const item={ id:moduleState.editingId || uuid(), date,time, customer:$("spAptCustomer").value.trim(), street:$("spAptStreet").value.trim(), house:$("spAptHouse").value.trim(), zip:$("spAptZip").value.trim(), city:$("spAptCity").value.trim(), duration:Number($("spAptDuration").value)||15, notes:$("spAptNotes").value.trim(), works:selectedWorks(), workOther:$("spWorkOtherText").value.trim(), kid:moduleState.aptCustomer?.id||"", knr:moduleState.aptCustomer?.nr||"", updatedAt:new Date().toISOString() };
-    const list=appointments(); const idx=list.findIndex(x=>x.id===item.id); if(idx>=0) list[idx]=item; else list.push(item);
+    const list=appointments(); const idx=list.findIndex(x=>x.id===item.id); if(idx>=0) list[idx]={ ...list[idx], ...item }; else list.push(item);
     persist({appointments:list}); moduleState.selectedId=item.id; moduleState.date=fromIso(date); closeModal(); render();
   }
   function deleteAppointment() {
