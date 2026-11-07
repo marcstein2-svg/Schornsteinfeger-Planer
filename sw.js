@@ -1,6 +1,6 @@
 /* Schornstein Planer – Service Worker */
 
-const VERSION = "v20";
+const VERSION = "v21";
 const PREFIX = "schornstein-planer-";
 const CACHE = PREFIX + VERSION;
 
@@ -10,6 +10,7 @@ const ASSETS = [
   "start-hub.js",
   "luftverbund.js",
   "kunden.js",
+  "sicherung.js",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png"
