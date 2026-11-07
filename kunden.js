@@ -89,6 +89,8 @@
       ownerAddr: String(k.ownerAddr || ""),
       notes: String(k.notes || ""),
       bossNote: String(k.bossNote || ""),
+      travelBefore: Math.max(0, Math.min(240, Math.round(Number(k.travelBefore) || 0))),
+      travelAfter: Math.max(0, Math.min(240, Math.round(Number(k.travelAfter) || 0))),
       created: k.created || new Date().toISOString(),
       updated: k.updated || new Date().toISOString()
     };
@@ -348,6 +350,8 @@
     ".kv-wtext[hidden]{display:none}" +
     ".kv-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}" +
     ".kv-quick strong{font-size:.82rem;margin-right:2px}" +
+    ".kv-travel{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:.8rem;font-weight:700;color:#4f5962}" +
+    ".kv-travel input{width:58px;padding:6px;border:1px solid #c9ced2;border-radius:8px;font-size:16px;text-align:center}" +
     ".kv-sheet-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}" +
     ".kv-sheet-foot strong{font-size:.95rem}" +
     "@media (max-width:600px){.kv-card{padding:14px}.kv-form{grid-template-columns:1fr}.kv-overlay{padding:0;align-items:stretch}.kv-sheet{max-height:100vh;height:100%;border-radius:0}.kv-actions .btn{flex:1}}";
@@ -386,7 +390,14 @@
         E(w.text || "") +
         '"' +
         (w.other ? "" : " hidden") +
-        ">"
+        ">" +
+        (wk.travel
+          ? '<span class="kv-travel">🚗 Fahrt <input class="kv-tb" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0" value="' +
+            (w.tb || "") +
+            '" aria-label="Fahrtzeit vorher in Minuten"> vor · <input class="kv-ta" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0" value="' +
+            (w.ta || "") +
+            '" aria-label="Fahrtzeit nachher in Minuten"> nach (Min.)</span>'
+          : "")
       );
     }
 
@@ -776,6 +787,16 @@
 
         wk.getWork(inp.closest(".kv-item").getAttribute("data-id")).text = inp.value;
       });
+
+      host.addEventListener("input", function (e) {
+        var tin = e.target.closest(".kv-tb, .kv-ta");
+
+        if (!tin) return;
+
+        var w3 = wk.getWork(tin.closest(".kv-item").getAttribute("data-id"));
+
+        w3[tin.classList.contains("kv-tb") ? "tb" : "ta"] = Math.max(0, Math.min(240, Math.round(Number(tin.value) || 0)));
+      });
     }
 
     var api = { update: update, host: host };
@@ -849,6 +870,8 @@
       '<p class="kv-hint">Leer lassen, wenn der Eigentümer im Haus wohnt.</p></div>' +
       '<div class="field wide"><label for="kvNotes">Besonderheiten</label>' +
       '<textarea id="kvNotes" rows="3" placeholder="Zugang, Hinweise …"></textarea></div>' +
+      '<div class="field"><label for="kvTb">Standard-Fahrtzeit vorher (Min.)</label><input id="kvTb" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>' +
+      '<div class="field"><label for="kvTa">Standard-Fahrtzeit nachher (Min.)</label><input id="kvTa" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>' +
       '<div class="field wide"><label for="kvBoss">Bemerkung für den Chef (nur im Chef-Ausdruck)</label>' +
       '<textarea id="kvBoss" rows="2" placeholder="z. B. zahlt immer bar, Rechnung immer per Post …"></textarea></div>' +
       "</div>" +
@@ -874,6 +897,8 @@
     f("kvOwner").value = k ? k.ownerAddr : "";
     f("kvNotes").value = k ? k.notes : "";
     f("kvBoss").value = k ? k.bossNote || "" : "";
+    f("kvTb").value = k && k.travelBefore ? k.travelBefore : "";
+    f("kvTa").value = k && k.travelAfter ? k.travelAfter : "";
 
     function close() {
       document.removeEventListener("keydown", onKey, true);
@@ -965,6 +990,8 @@
           ownerAddr: f("kvOwner").value.trim(),
           notes: f("kvNotes").value.trim(),
           bossNote: f("kvBoss").value.trim(),
+          travelBefore: Math.max(0, Math.min(240, Math.round(Number(f("kvTb").value) || 0))),
+          travelAfter: Math.max(0, Math.min(240, Math.round(Number(f("kvTa").value) || 0))),
           created: k ? k.created : new Date().toISOString(),
           updated: new Date().toISOString()
         };
