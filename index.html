@@ -1426,6 +1426,11 @@
     .sp-exp-row span { flex: 1; min-width: 0; }
     .sp-exp-row button { border: 0; background: #fdecec; color: #a02f2f; border-radius: 8px; min-height: 34px; min-width: 38px; font-weight: 800; cursor: pointer; }
     .sp-exp-sum { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #f3faf5; border: 1px solid #b9dcc6; font-size: .88rem; }
+    .sp-code { flex: 0 0 auto; align-self: center; padding: 2px 8px; border-radius: 8px; background: #22272d; color: #fff; font-size: .72rem; font-weight: 850; letter-spacing: .03em; white-space: nowrap; }
+    .sp-appt.compact .sp-code { padding: 1px 6px; font-size: .66rem; margin-left: 4px; vertical-align: 1px; }
+    .sp-legend { margin: 0 0 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fbfbfc; font-size: .78rem; color: #4f5962; line-height: 1.7; }
+    .sp-legend span { display: inline-block; margin-right: 10px; white-space: nowrap; }
+    .sp-legend span b { display: inline-block; min-width: 1.6em; padding: 0 6px; margin-right: 3px; border-radius: 6px; background: #22272d; color: #fff; text-align: center; }
     .sp-appt.missed { border-left-color: #c9791b; background: #fff7ea; }
     .sp-act.missed { border-color: #c9791b; background: #fff1dc; color: #8a4b00; }
     .sp-badge-warn { background: #fde0e0; color: #a02f2f; }
@@ -1870,6 +1875,7 @@
         </div>
       </div>
 
+      <div class="sp-legend" id="spLegend"><b>Kürzel:</b> <span><b>K</b> Kehren</span> <span><b>M</b> Messen</span> <span><b>MK</b> Messen + Kehren</span> <span><b>FSS</b> Feuerstättenschau</span> <span><b>MK+FSS</b> Messen, Kehren + Feuerstättenschau</span> <span><b>FSM</b> Feststoffmessung</span> <span><b>S</b> Sonderarbeit</span></div>
       <div class="sp-calendar-notice" id="spCalendarNotice" hidden></div>
       <div class="sp-calendar" id="spCalendar"></div>
 
@@ -6503,6 +6509,12 @@
   }
   const INV_LABEL = { post: "per Post", hinterlegt: "Rechnung hinterlegt – Kunde überweist", mail: "per E-Mail", bar: "Barzahlung" };
   const INV_SHORT = { post: "Post", hinterlegt: "hinterlegt", mail: "E-Mail", bar: "bar" };
+  /* Kürzel der Tätigkeiten: K, M, MK, FSS, MK+FSS, FSM, S (weitere Kombinationen mit „+“) */
+  function workCode(a) {
+    const w = Array.isArray(a.works) ? a.works : [];
+    const base = (w.includes("messung") ? "M" : "") + (w.includes("kehrung") ? "K" : "");
+    return [base, w.includes("schau") ? "FSS" : "", w.includes("feststoff") ? "FSM" : "", w.includes("other") ? "S" : ""].filter(Boolean).join("+");
+  }
   const attemptOf = a => (Number(a.attempt) > 1 ? Number(a.attempt) : 1);
   const attemptLabel = n => (n === 3 ? "3. und letzte Anmeldung" : `${n}. Anmeldung`);
   const followUpOf = a => appointments().find(x => x.prevId === a.id) || null;
@@ -6520,9 +6532,11 @@
     const title = (a.customer || "Ohne Kundennamen") + (addr ? " – " + addr : "") + (att > 1 ? ` (${attemptLabel(att)})` : "") + (a.missed ? " – nicht angetroffen" : "") + (slipStale(a) ? " – Anmeldezettel neu drucken" : "");
     const badgeTime = att > 1 && compact ? ` <span class="sp-badge">${att}.</span>` : "";
     const stale = slipStale(a);
+    const code = workCode(a);
+    const codeHtml = code ? `<span class="sp-code" title="${esc(worksText(a).join(", "))}">${esc(code)}</span>` : "";
     const badgeLine = (att > 1 && !compact ? `<span class="sp-badge sp-badge-line">${attemptLabel(att)}</span>` : "") + (stale && !compact ? `<span class="sp-badge sp-badge-line sp-badge-warn">⚠ Zettel neu drucken</span>` : "");
     const mark = (a.done ? "✔ " : a.missed ? "🚪 " : "") + (stale && compact ? "⚠ " : "");
-    const btn = `<button type="button" class="sp-appt${compact ? " compact" : ""}${a.id === moduleState.selectedId ? " selected" : ""}${a.done ? " done" : ""}${a.missed ? " missed" : ""}" data-sp-open="${esc(a.id)}" data-date="${esc(a.date)}" data-time="${esc(a.time)}" title="${esc(title)}"><span class="sp-appt-time">${mark}${esc(a.time)}${badgeTime}</span><span class="sp-appt-main"><strong>${esc(a.customer || "Ohne Kundennamen")}</strong>${badgeLine}${compact || !addr ? "" : `<small>${esc(addr)}</small>`}</span></button>`;
+    const btn = `<button type="button" class="sp-appt${compact ? " compact" : ""}${a.id === moduleState.selectedId ? " selected" : ""}${a.done ? " done" : ""}${a.missed ? " missed" : ""}" data-sp-open="${esc(a.id)}" data-date="${esc(a.date)}" data-time="${esc(a.time)}" title="${esc(title)}"><span class="sp-appt-time">${mark}${esc(a.time)}${badgeTime}${compact ? codeHtml : ""}</span>${compact ? "" : codeHtml}<span class="sp-appt-main"><strong>${esc(a.customer || "Ohne Kundennamen")}</strong>${badgeLine}${compact || !addr ? "" : `<small>${esc(addr)}</small>`}</span></button>`;
     if (compact) return btn;
     const inv = a.done && a.invoice ? ` · ${INV_SHORT[a.invoice] || ""}${a.invoice === "bar" && a.amount > 0 ? " " + fmtEUR(a.amount) : ""}` : "";
     const fu = a.missed ? followUpOf(a) : null;
