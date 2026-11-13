@@ -5815,7 +5815,12 @@
     data = plan
   ) {
 
-    if (data.countDoneAppointments === false) {
+    const countOn =
+      data.countDoneAppointments !== undefined
+        ? data.countDoneAppointments
+        : plan.countDoneAppointments;
+
+    if (countOn === false) {
       return [];
     }
 
@@ -5834,14 +5839,20 @@
       apps = [];
     }
 
-    const f = Number(data.amountPerAppointment);
+    const f = Number(
+      data.amountPerAppointment !== undefined
+        ? data.amountPerAppointment
+        : plan.amountPerAppointment
+    );
     const amount = Number.isFinite(f) && f >= 0 ? f : 1;
     const year = String(data.year || "");
+    const start = String(data.startDate || "");
 
     return apps
       .filter(a =>
         a && a.done && a.date &&
-        (!year || String(a.date).slice(0, 4) === year)
+        (!year || String(a.date).slice(0, 4) === year) &&
+        (!start || String(a.date) >= start)
       )
       .map(a => ({
         id: "apt-" + a.id,
@@ -6403,8 +6414,8 @@
 
     info.textContent = box.checked
       ? list.length
-        ? "Angerechnet: " + list.length + " erledigte Termine im Jahr " + plan.year + " = " + formatNumber(sum) + ". Es genügt, den Termin im Kalender abzuhaken – hier musst du ihn nicht noch einmal eintragen."
-        : "Noch keine erledigten Termine im Jahr " + plan.year + ". Sobald du einen Termin im Kalender als erledigt abhakst, wird er hier mitgezählt."
+        ? "Angerechnet: " + list.length + " erledigte Termine " + (plan.startDate ? "ab dem Startdatum " + formatDate(plan.startDate) : "im Jahr " + plan.year) + " = " + formatNumber(sum) + ". Es genügt, den Termin im Kalender abzuhaken – hier musst du ihn nicht noch einmal eintragen."
+        : "Noch keine erledigten Termine " + (plan.startDate ? "ab dem Startdatum " + formatDate(plan.startDate) : "im Jahr " + plan.year) + ". Sobald du einen Termin im Kalender als erledigt abhakst, wird er hier mitgezählt. (Termine vor dem Startdatum zählen nicht.)"
       : "Aus: Erledigte Termine werden nicht angerechnet. Leistungen trägst du dann nur von Hand ein.";
 
   }
