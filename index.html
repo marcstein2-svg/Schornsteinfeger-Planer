@@ -1384,6 +1384,24 @@
     .sp-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .sp-business-grid { margin-top: 12px; }
     .sp-proposal-list { display: grid; gap: 7px; margin: 12px 0; max-height: 260px; overflow: auto; }
+    .sp-search { margin-bottom: 12px; }
+    .sp-search label { display: block; font-weight: 700; font-size: .9rem; margin-bottom: 6px; }
+    .sp-search-row { display: flex; gap: 8px; }
+    .sp-search-row input { flex: 1; min-width: 0; }
+    .sp-search-results { margin-top: 8px; border: 1px solid var(--border); border-radius: 12px; background: #fff; max-height: 360px; overflow: auto; }
+    .sp-search-head { padding: 8px 12px; font-size: .82rem; color: #4f5962; background: #f7f8f9; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+    .sp-search-item { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 9px 12px; border-bottom: 1px solid #eceef0; cursor: pointer; }
+    .sp-search-item:last-child { border-bottom: 0; }
+    .sp-search-item:hover { background: #fbf6ea; }
+    .sp-search-item.past { opacity: .78; }
+    .sp-search-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .sp-search-main span { color: #4f5962; font-size: .88rem; overflow-wrap: anywhere; }
+    .sp-search-state { font-size: .72rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; background: #eef0f2; color: #4f5962; white-space: nowrap; }
+    .sp-search-state.done { background: #e1f3e7; color: #2e6f45; }
+    .sp-search-state.missed { background: #fdeccf; color: #8a4b00; }
+    .sp-search-empty { padding: 12px; color: #4f5962; }
+    .sp-appt.sp-flash { animation: spFlash 2.2s ease-out 1; }
+    @keyframes spFlash { 0%, 60% { box-shadow: 0 0 0 3px #e8b84a; background: #fff3cf; } 100% { box-shadow: 0 0 0 0 transparent; } }
     .sp-proposal-item { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 9px; }
     .sp-proposal-item.selected { border-color: var(--gold); background: #fffaf0; }
     .sp-proposal-item input { accent-color: var(--gold); }
@@ -1863,6 +1881,15 @@
           <span class="sp-chevron" aria-hidden="true"></span>
         </summary>
         <div class="sp-collapse-body">
+
+      <div class="sp-search">
+        <label for="spSearch">🔍 Termin suchen – nach Name, Straße, Ort oder Kundennummer</label>
+        <div class="sp-search-row">
+          <input id="spSearch" type="search" autocomplete="off" placeholder="z. B. Müller oder Hauptstraße 12" enterkeyhint="search">
+          <button class="btn btn-light" type="button" id="spSearchClear" hidden>✕ Leeren</button>
+        </div>
+        <div class="sp-search-results" id="spSearchResults" hidden></div>
+      </div>
 
       <div class="sp-toolbar">
         <div class="sp-toolbar-group">
@@ -6625,6 +6652,7 @@
     $("spPrevPeriod").addEventListener("click", () => move(-1));
     $("spNextPeriod").addEventListener("click", () => move(1));
     $("spToday").addEventListener("click", () => { moduleState.date = new Date(); render(); });
+    initSearch();
     $("spToggleEmpty").addEventListener("click", () => { moduleState.showEmpty = !moduleState.showEmpty; render(); });
     $("spNewAppointment").addEventListener("click", () => openModal(iso(moduleState.date), "09:00"));
     document.querySelectorAll("[data-sp-view]").forEach(b => b.addEventListener("click", () => { moduleState.view = b.dataset.spView; render(); }));
@@ -6830,8 +6858,82 @@
     }).join("")}</div>`;
   }
 
+
+  /* ================= Termine suchen (Name, Adresse, Kundennummer) ================= */
+  const foldA = t => String(t || "").toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
+  const foldB = t => String(t || "").toLowerCase().replace(/ß/g, "ss").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  function searchHay(a) {
+    const raw = [a.customer, a.street, a.house, [a.street, a.house].filter(Boolean).join(" "), a.zip, a.city, [a.zip, a.city].filter(Boolean).join(" "), a.knr, a.notes, a.bossNote, a.date && shortDate(a.date)].filter(Boolean).join(" | ");
+    return foldA(raw) + " | " + foldB(raw);
+  }
+  function searchAppointments(q) {
+    const tokens = String(q || "").trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return null;
+    const todayIso = iso(new Date());
+    const hits = appointments().filter(a => {
+      const hay = searchHay(a);
+      return tokens.every(t => hay.includes(foldA(t)) || hay.includes(foldB(t)));
+    });
+    const key = a => `${a.date} ${a.time || ""}`;
+    const upcoming = hits.filter(a => a.date >= todayIso).sort((x, y) => key(x).localeCompare(key(y)));
+    const past = hits.filter(a => a.date < todayIso).sort((x, y) => key(y).localeCompare(key(x)));
+    return upcoming.concat(past);
+  }
+  function renderSearch() {
+    const box = $("spSearchResults"), inp = $("spSearch");
+    if (!box || !inp) return;
+    const q = inp.value;
+    $("spSearchClear").hidden = !q;
+    const res = searchAppointments(q);
+    if (res === null) { box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    if (!res.length) { box.innerHTML = '<div class="sp-search-empty">Kein Termin gefunden. Gesucht wird in Name, Straße, Hausnummer, PLZ, Ort, Kundennummer und Notizen.</div>'; return; }
+    const todayIso = iso(new Date()), MAX = 40;
+    const rows = res.slice(0, MAX).map(a => {
+      const addr = addrLine(a), att = attemptOf(a);
+      const state = a.done ? '<span class="sp-search-state done">✔ erledigt</span>' : a.missed ? '<span class="sp-search-state missed">🚪 nicht angetroffen</span>' : '<span class="sp-search-state">offen</span>';
+      const att2 = att > 1 ? `<span class="sp-search-state">${esc(attemptLabel(att))}</span>` : "";
+      return `<div class="sp-search-item${a.date < todayIso ? " past" : ""}" data-sp-goto="${esc(a.id)}" role="button" tabindex="0"><div class="sp-search-main"><strong>${esc(fmtDate(a.date))} · ${esc(a.time || "")} Uhr${state}${att2}</strong><span>${esc(a.customer || "Ohne Kundennamen")}${a.knr ? " · Kd-Nr " + esc(a.knr) : ""}${addr ? " – " + esc(addr) : ""}</span></div><button class="btn btn-light" type="button" data-sp-sedit="${esc(a.id)}">Bearbeiten</button></div>`;
+    }).join("");
+    box.innerHTML = `<div class="sp-search-head">${res.length} Treffer${res.length > MAX ? " (die ersten " + MAX + " – bitte genauer suchen)" : ""} · antippen zeigt den Termin im Kalender</div>${rows}`;
+  }
+  function gotoAppointment(id) {
+    const a = appointments().find(x => x.id === id);
+    if (!a) return;
+    moduleState.date = fromIso(a.date);
+    moduleState.selectedId = id;
+    moduleState.dayManual = false;
+    render();
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`#spCalendar [data-sp-open="${(window.CSS && CSS.escape) ? CSS.escape(id) : id}"]`);
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.add("sp-flash");
+      setTimeout(() => el.classList.remove("sp-flash"), 2300);
+    });
+  }
+  function initSearch() {
+    const inp = $("spSearch"), box = $("spSearchResults");
+    if (!inp) return;
+    let t = null;
+    inp.addEventListener("input", () => { clearTimeout(t); t = setTimeout(renderSearch, 120); $("spSearchClear").hidden = !inp.value; });
+    inp.addEventListener("keydown", e => {
+      if (e.key === "Escape") { inp.value = ""; renderSearch(); }
+      if (e.key === "Enter") { e.preventDefault(); const first = box.querySelector("[data-sp-goto]"); if (first) gotoAppointment(first.dataset.spGoto); }
+    });
+    $("spSearchClear").addEventListener("click", () => { inp.value = ""; renderSearch(); inp.focus(); });
+    box.addEventListener("click", e => {
+      const ed = e.target.closest("[data-sp-sedit]"); if (ed) { e.stopPropagation(); openModal("", "", ed.dataset.spSedit); return; }
+      const row = e.target.closest("[data-sp-goto]"); if (row) gotoAppointment(row.dataset.spGoto);
+    });
+    box.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { const row = e.target.closest("[data-sp-goto]"); if (row && e.target === row) { e.preventDefault(); gotoAppointment(row.dataset.spGoto); } }
+    });
+  }
+
   function render() {
     if (!$('spCalendar')) return;
+    renderSearch();
     if ($("spDayDate") && !moduleState.dayManual) $("spDayDate").value = iso(moduleState.date);
     renderExpenses();
     const week = moduleState.view === "week";
