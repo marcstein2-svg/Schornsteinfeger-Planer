@@ -70,6 +70,88 @@
      SPEICHER
      ============================================================ */
 
+  /* Koordinate (Zahl innerhalb der Grenzen) oder null */
+  function coord(v, max) {
+    var n = typeof v === "string" ? parseFloat(v.replace(",", ".")) : v;
+
+    return typeof n === "number" && isFinite(n) && Math.abs(n) <= max ? n : null;
+  }
+
+  /* Wunschzeiten: [{ days:[0-6], from:"HH:MM", to:"HH:MM" }] – 0 = Sonntag … 6 = Samstag */
+  function cleanWishes(w) {
+    if (!Array.isArray(w)) return [];
+
+    return w
+      .map(function (r) {
+        var days = (Array.isArray(r && r.days) ? r.days : [])
+          .map(Number)
+          .filter(function (d, i, a) {
+            return d >= 0 && d <= 6 && a.indexOf(d) === i;
+          });
+
+        return {
+          days: days,
+          from: r && /^\d{2}:\d{2}$/.test(r.from) ? r.from : "00:00",
+          to: r && /^\d{2}:\d{2}$/.test(r.to) ? r.to : "23:59"
+        };
+      })
+      .filter(function (r) {
+        return r.days.length;
+      });
+  }
+
+  var WD_ORDER = [1, 2, 3, 4, 5, 6, 0];
+  var WD_NAME = { 1: "Mo", 2: "Di", 3: "Mi", 4: "Do", 5: "Fr", 6: "Sa", 0: "So" };
+
+  function toMinutes(t) {
+    var p = String(t || "0:0").split(":");
+
+    return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+  }
+
+  /* Wunschzeiten als Text, z. B. "Fr ab 14:00 Uhr; Mo–Mi 08:00–12:00 Uhr" */
+  function wishText(c) {
+    return cleanWishes(c && c.wishes)
+      .map(function (r) {
+        var idx = WD_ORDER.filter(function (d) {
+          return r.days.indexOf(d) >= 0;
+        });
+        var parts = [];
+        var i = 0;
+
+        while (i < idx.length) {
+          var j = i;
+
+          while (j + 1 < idx.length && WD_ORDER.indexOf(idx[j + 1]) === WD_ORDER.indexOf(idx[j]) + 1) j++;
+
+          parts.push(j - i >= 2 ? WD_NAME[idx[i]] + "–" + WD_NAME[idx[j]] : idx.slice(i, j + 1).map(function (d) { return WD_NAME[d]; }).join(", "));
+          i = j + 1;
+        }
+
+        var open = r.from === "00:00";
+        var end = r.to === "23:59";
+        var t = open && end ? "ganztags" : open ? "bis " + r.to + " Uhr" : end ? "ab " + r.from + " Uhr" : r.from + "–" + r.to + " Uhr";
+
+        return parts.join(", ") + " " + t;
+      })
+      .join("; ");
+  }
+
+  /* Zeitfenster des Kunden an einem Wochentag (Minuten) – null = keine Wünsche, jederzeit möglich */
+  function wishWindows(c, weekday) {
+    var w = cleanWishes(c && c.wishes);
+
+    if (!w.length) return null;
+
+    return w
+      .filter(function (r) {
+        return r.days.indexOf(weekday) >= 0;
+      })
+      .map(function (r) {
+        return [toMinutes(r.from), toMinutes(r.to)];
+      });
+  }
+
   function clean(k) {
     if (!k || typeof k !== "object") return null;
 
@@ -89,6 +171,9 @@
       ownerAddr: String(k.ownerAddr || ""),
       notes: String(k.notes || ""),
       bossNote: String(k.bossNote || ""),
+      wishes: cleanWishes(k.wishes),
+      lat: coord(k.lat, 90),
+      lon: coord(k.lon, 180),
       travelBefore: Math.max(0, Math.min(240, Math.round(Number(k.travelBefore) || 0))),
       travelAfter: Math.max(0, Math.min(240, Math.round(Number(k.travelAfter) || 0))),
       created: k.created || new Date().toISOString(),
@@ -352,6 +437,14 @@
     ".kv-quick strong{font-size:.82rem;margin-right:2px}" +
     ".kv-travel{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:.8rem;font-weight:700;color:#4f5962}" +
     ".kv-travel input{width:58px;padding:6px;border:1px solid #c9ced2;border-radius:8px;font-size:16px;text-align:center}" +
+    ".kv-wish{border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:8px;background:#fbfbfc}" +
+    ".kv-wd{display:flex;gap:4px;flex-wrap:wrap}" +
+    ".kv-wdb{min-width:42px;min-height:40px;border:1px solid #c9ced2;border-radius:8px;background:#fff;font:inherit;font-weight:800;cursor:pointer}" +
+    ".kv-wdb.on{background:var(--gold);border-color:var(--gold);color:#22272d}" +
+    ".kv-wt{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}" +
+    ".kv-wt label{display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700}" +
+    ".kv-wt input{padding:6px 8px;border:1px solid #c9ced2;border-radius:8px;font-size:16px}" +
+    ".kv-wrm{margin-left:auto;min-width:40px;min-height:38px;border:0;border-radius:8px;background:#fdecec;color:#a02f2f;font-weight:800;cursor:pointer}" +
     ".kv-sheet-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}" +
     ".kv-sheet-foot strong{font-size:.95rem}" +
     "@media (max-width:600px){.kv-card{padding:14px}.kv-form{grid-template-columns:1fr}.kv-overlay{padding:0;align-items:stretch}.kv-sheet{max-height:100vh;height:100%;border-radius:0}.kv-actions .btn{flex:1}}";
@@ -870,6 +963,18 @@
       '<p class="kv-hint">Leer lassen, wenn der Eigentümer im Haus wohnt.</p></div>' +
       '<div class="field wide"><label for="kvNotes">Besonderheiten</label>' +
       '<textarea id="kvNotes" rows="3" placeholder="Zugang, Hinweise …"></textarea></div>' +
+      '<div class="field wide"><label>Wunschzeiten (wann ist der Kunde am besten erreichbar?)</label>' +
+      '<div id="kvWishes"></div>' +
+      '<button type="button" class="btn btn-light" data-x="wish" style="margin-top:6px">＋ Wunschzeit hinzufügen</button>' +
+      '<p class="kv-hint">z. B. Freitag ab 14:00 Uhr. Bei der automatischen Terminvergabe wird der Kunde nur dann eingeplant.</p></div>' +
+      '<div class="field wide"><label>Standort (für die Routenplanung)</label>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<input id="kvLat" type="text" inputmode="decimal" placeholder="Breite, z. B. 50.5870" autocomplete="off" style="flex:1 1 140px">' +
+      '<input id="kvLon" type="text" inputmode="decimal" placeholder="Länge, z. B. 8.6781" autocomplete="off" style="flex:1 1 140px"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">' +
+      '<button type="button" class="btn btn-light" data-x="gps">📍 Aktuellen Standort übernehmen</button>' +
+      '<button type="button" class="btn btn-light" data-x="geo">🔎 Adresse online suchen</button></div>' +
+      '<p class="kv-hint" id="kvLocInfo">Aktuellen Standort übernehmen, wenn du vor dem Haus stehst – oder die Adresse über OpenStreetMap suchen (Internet nötig, die Adresse wird dabei an OpenStreetMap gesendet).</p></div>' +
       '<div class="field"><label for="kvTb">Standard-Fahrtzeit vorher (Min.)</label><input id="kvTb" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>' +
       '<div class="field"><label for="kvTa">Standard-Fahrtzeit nachher (Min.)</label><input id="kvTa" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>' +
       '<div class="field wide"><label for="kvBoss">Bemerkung für den Chef (nur im Chef-Ausdruck)</label>' +
@@ -897,6 +1002,64 @@
     f("kvOwner").value = k ? k.ownerAddr : "";
     f("kvNotes").value = k ? k.notes : "";
     f("kvBoss").value = k ? k.bossNote || "" : "";
+    /* Wunschzeiten: im Editor "" statt 00:00 / 23:59 anzeigen (offen) */
+    var wishes = cleanWishes(k && k.wishes).map(function (r) {
+      return { days: r.days.slice(), from: r.from === "00:00" ? "" : r.from, to: r.to === "23:59" ? "" : r.to };
+    });
+
+    function renderWishes() {
+      f("kvWishes").innerHTML = wishes
+        .map(function (r, i) {
+          return (
+            '<div class="kv-wish" data-i="' + i + '"><div class="kv-wd">' +
+            WD_ORDER.map(function (d) {
+              return '<button type="button" class="kv-wdb' + (r.days.indexOf(d) >= 0 ? " on" : "") + '" data-wd="' + d + '">' + WD_NAME[d] + "</button>";
+            }).join("") +
+            '</div><div class="kv-wt"><label>ab <input type="time" class="kv-wf" value="' + E(r.from) + '"></label>' +
+            '<label>bis <input type="time" class="kv-wto" value="' + E(r.to) + '"></label>' +
+            '<button type="button" class="kv-wrm" data-wrm="1" aria-label="Wunschzeit entfernen">✕</button></div></div>'
+          );
+        })
+        .join("");
+    }
+
+    renderWishes();
+
+    f("kvWishes").addEventListener("click", function (e) {
+      var row = e.target.closest(".kv-wish");
+
+      if (!row) return;
+
+      var r = wishes[+row.getAttribute("data-i")];
+      var wd = e.target.closest("[data-wd]");
+
+      if (wd) {
+        var d = +wd.getAttribute("data-wd");
+        var at = r.days.indexOf(d);
+
+        if (at >= 0) r.days.splice(at, 1);
+        else r.days.push(d);
+
+        wd.classList.toggle("on", at < 0);
+      } else if (e.target.closest("[data-wrm]")) {
+        wishes.splice(+row.getAttribute("data-i"), 1);
+        renderWishes();
+      }
+    });
+
+    f("kvWishes").addEventListener("input", function (e) {
+      var row = e.target.closest(".kv-wish");
+
+      if (!row) return;
+
+      var r = wishes[+row.getAttribute("data-i")];
+
+      if (e.target.classList.contains("kv-wf")) r.from = e.target.value;
+      if (e.target.classList.contains("kv-wto")) r.to = e.target.value;
+    });
+
+    f("kvLat").value = k && k.lat !== null && k.lat !== undefined ? k.lat : "";
+    f("kvLon").value = k && k.lon !== null && k.lon !== undefined ? k.lon : "";
     f("kvTb").value = k && k.travelBefore ? k.travelBefore : "";
     f("kvTa").value = k && k.travelAfter ? k.travelAfter : "";
 
@@ -941,6 +1104,46 @@
 
       if (a === "close") {
         close();
+      } else if (a === "wish") {
+        wishes.push({ days: [], from: "", to: "" });
+        renderWishes();
+      } else if (a === "gps") {
+        var info = f("kvLocInfo");
+
+        getGps().then(
+          function (p) {
+            f("kvLat").value = p.lat.toFixed(6);
+            f("kvLon").value = p.lon.toFixed(6);
+            info.textContent = "Standort übernommen (Genauigkeit ca. " + Math.round(p.acc) + " m). Mit „Speichern“ sichern.";
+          },
+          function (err) {
+            info.textContent = "Standort nicht verfügbar: " + err;
+          }
+        );
+      } else if (a === "geo") {
+        var info2 = f("kvLocInfo");
+
+        info2.textContent = "Suche läuft …";
+        geocodeAddress({
+          street: f("kvStreet").value.trim(),
+          house: f("kvHouse").value.trim(),
+          zip: f("kvZip").value.trim(),
+          city: f("kvCity").value.trim()
+        }).then(
+          function (p) {
+            if (!p) {
+              info2.textContent = "Adresse nicht gefunden. Bitte Angaben prüfen oder den Standort per GPS übernehmen.";
+              return;
+            }
+
+            f("kvLat").value = p.lat.toFixed(6);
+            f("kvLon").value = p.lon.toFixed(6);
+            info2.textContent = "Standort gefunden. Mit „Speichern“ sichern.";
+          },
+          function () {
+            info2.textContent = "Suche nicht möglich (keine Internetverbindung?).";
+          }
+        );
       } else if (a === "del") {
         if (
           !confirm(
@@ -990,6 +1193,13 @@
           ownerAddr: f("kvOwner").value.trim(),
           notes: f("kvNotes").value.trim(),
           bossNote: f("kvBoss").value.trim(),
+          wishes: cleanWishes(
+            wishes.map(function (r) {
+              return { days: r.days, from: r.from || "00:00", to: r.to || "23:59" };
+            })
+          ),
+          lat: coord(f("kvLat").value, 90),
+          lon: coord(f("kvLon").value, 180),
           travelBefore: Math.max(0, Math.min(240, Math.round(Number(f("kvTb").value) || 0))),
           travelAfter: Math.max(0, Math.min(240, Math.round(Number(f("kvTa").value) || 0))),
           created: k ? k.created : new Date().toISOString(),
@@ -1164,6 +1374,108 @@
   }
 
   /* ============================================================
+     STANDORT (GPS / OpenStreetMap)
+     ============================================================ */
+
+  function getGps() {
+    return new Promise(function (resolve, reject) {
+      if (!navigator.geolocation) return reject("Dieses Gerät unterstützt keine Standortbestimmung.");
+
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy || 0 });
+        },
+        function (err) {
+          reject(err && err.code === 1 ? "Standortzugriff wurde nicht erlaubt." : "Standort konnte nicht bestimmt werden.");
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      );
+    });
+  }
+
+  /* Adresse -> { lat, lon } über OpenStreetMap (Nominatim); null = nicht gefunden */
+  async function nominatim(params) {
+    params.set("format", "json");
+    params.set("limit", "1");
+    params.set("countrycodes", "de,at,ch,lu");
+
+    var r = await fetch("https://nominatim.openstreetmap.org/search?" + params.toString(), {
+      headers: { "Accept-Language": "de" }
+    });
+
+    if (!r.ok) throw new Error("HTTP " + r.status);
+
+    var j = await r.json();
+
+    return j && j[0] ? { lat: parseFloat(j[0].lat), lon: parseFloat(j[0].lon) } : null;
+  }
+
+  async function geocodeAddress(a) {
+    var p = new URLSearchParams();
+
+    if (a.street) p.set("street", [a.house, a.street].filter(Boolean).join(" "));
+    if (a.zip) p.set("postalcode", a.zip);
+    if (a.city) p.set("city", a.city);
+
+    var hit = a.street || a.city || a.zip ? await nominatim(p) : null;
+
+    if (hit) return hit;
+
+    /* Fallback: Freitextsuche */
+    var q = [streetLine(a), cityLine(a)].filter(Boolean).join(", ");
+
+    return q ? nominatim(new URLSearchParams({ q: q })) : null;
+  }
+
+  async function geocodeText(q) {
+    return q ? nominatim(new URLSearchParams({ q: q })) : null;
+  }
+
+  function setLocation(id, lat, lon) {
+    var c = byId(id);
+
+    if (!c) return;
+
+    kunden = kunden.map(function (x) {
+      return x.id === id ? Object.assign({}, x, { lat: lat, lon: lon, updated: new Date().toISOString() }) : x;
+    });
+    persist();
+    refreshAll();
+  }
+
+  /* Fehlende Standorte nacheinander suchen (höchstens eine Anfrage pro Sekunde, wie von OpenStreetMap verlangt) */
+  async function geocodeMissing(list, onProgress) {
+    var todo = list.filter(function (c) {
+      return c.lat === null || c.lat === undefined || c.lon === null || c.lon === undefined;
+    });
+    var found = 0;
+    var failed = 0;
+
+    for (var i = 0; i < todo.length; i++) {
+      if (onProgress) onProgress(i, todo.length);
+
+      try {
+        var p = await geocodeAddress(todo[i]);
+
+        if (p) {
+          setLocation(todo[i].id, p.lat, p.lon);
+          found++;
+        } else {
+          failed++;
+        }
+      } catch (e) {
+        failed++;
+      }
+
+      if (i < todo.length - 1) await new Promise(function (r) { setTimeout(r, 1100); });
+    }
+
+    if (onProgress) onProgress(todo.length, todo.length);
+
+    return { total: todo.length, found: found, failed: failed };
+  }
+
+  /* ============================================================
      SICHERUNG DER KUNDENLISTE
      ============================================================ */
 
@@ -1310,6 +1622,13 @@
     importData: importData,
     nextNumber: nextMainNr,
     nextInsertNumber: nextInsertNr,
-    parseNr: parseNr
+    parseNr: parseNr,
+    wishText: wishText,
+    wishWindows: wishWindows,
+    getGps: getGps,
+    geocodeAddress: geocodeAddress,
+    geocodeText: geocodeText,
+    geocodeMissing: geocodeMissing,
+    setLocation: setLocation
   };
 })();
