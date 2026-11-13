@@ -1866,11 +1866,6 @@
           <h2>Kalender</h2>
           <p>Plane Kundentermine lokal im Browser. Die Dauer richtet sich nach den Tätigkeiten.</p>
         </div>
-        <div class="sp-calendar-actions">
-          <button class="btn btn-light" type="button" id="spBackupData">💾 Daten sichern</button>
-          <label class="btn btn-light sp-file-label" for="spRestoreData">📂 Daten wiederherstellen</label>
-          <input id="spRestoreData" type="file" accept="application/json,.json" hidden>
-        </div>
       </div>
 
       <details class="sp-collapse sp-collapse-inner" data-sp-collapse="overview" open>
@@ -1963,7 +1958,7 @@
         <details class="sp-collapse sp-collapse-inner" data-sp-collapse="export">
           <summary>
             <span aria-hidden="true">📅</span>
-            <span>Kalender-Export &amp; Datensicherung</span>
+            <span>Kalender-Export</span>
             <span class="sp-chevron" aria-hidden="true"></span>
           </summary>
           <div class="sp-collapse-body">
@@ -1974,10 +1969,6 @@
           </div>
           <div class="form-actions">
             <button class="btn btn-gold" type="button" id="spExportRangeIcs">📅 Zeitraum als Kalender exportieren</button>
-          </div>
-          <div class="sp-backup-note">
-            <strong>Lokale Datensicherung</strong><br>
-            Termine, Betriebseinstellungen und die vorhandenen Planungsdaten bleiben auf diesem Gerät. Über „Daten sichern“ kannst du eine vollständige JSON-Sicherung erzeugen und später wieder importieren.
           </div>
         </div></details>
       </div>
@@ -2260,6 +2251,22 @@
         >
           Leistung speichern
         </button>
+
+      </div>
+
+      <div class="auto-count" style="margin:14px 0;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#f7faf8">
+
+        <label style="display:flex;gap:8px;align-items:center;font-weight:700;cursor:pointer">
+          <input type="checkbox" id="countDoneApts">
+          Erledigte Termine aus dem Terminplaner automatisch anrechnen
+        </label>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">
+          <label for="amountPerApt" style="font-size:.9rem">Menge je erledigtem Termin</label>
+          <input id="amountPerApt" type="text" inputmode="decimal" autocomplete="off" style="width:90px">
+        </div>
+
+        <p id="autoCountInfo" style="margin:8px 0 0;font-size:.86rem;color:var(--muted)"></p>
 
       </div>
 
@@ -3736,6 +3743,12 @@
     appointments:
       [],
 
+    countDoneAppointments:
+      true,
+
+    amountPerAppointment:
+      1,
+
     appointmentSettings:
       {
         businessName: "",
@@ -3862,6 +3875,14 @@
         "click",
         savePerformance
       );
+
+    document
+      .getElementById("countDoneApts")
+      .addEventListener("change", onAutoCountChange);
+
+    document
+      .getElementById("amountPerApt")
+      .addEventListener("change", onAutoCountChange);
 
     document
       .getElementById("addFreeDay")
@@ -5721,11 +5742,67 @@
      BERECHNUNGEN
   ===================================================== */
 
+  /* Erledigte Termine aus dem Terminplaner (frisch aus dem Speicher gelesen) zählen als Leistung */
+  function doneAppointmentEntries(
+    data = plan
+  ) {
+
+    if (data.countDoneAppointments === false) {
+      return [];
+    }
+
+    let apps = [];
+
+    try {
+      const stored =
+        JSON.parse(
+          localStorage.getItem(STORAGE_KEY) || "{}"
+        ) || {};
+
+      apps = Array.isArray(stored.appointments)
+        ? stored.appointments
+        : [];
+    } catch (error) {
+      apps = [];
+    }
+
+    const f = Number(data.amountPerAppointment);
+    const amount = Number.isFinite(f) && f >= 0 ? f : 1;
+    const year = String(data.year || "");
+
+    return apps
+      .filter(a =>
+        a && a.done && a.date &&
+        (!year || String(a.date).slice(0, 4) === year)
+      )
+      .map(a => ({
+        id: "apt-" + a.id,
+        date: a.date,
+        amount,
+        note:
+          "Termin " + (a.time || "") + " Uhr: " +
+          (a.customer || "ohne Namen") +
+          (a.attempt > 1 ? " (" + a.attempt + ". Anmeldung)" : ""),
+        auto: true
+      }));
+
+  }
+
+  function allEntries(
+    data = plan
+  ) {
+
+    return data.entries.concat(
+      doneAppointmentEntries(data)
+    );
+
+  }
+
   function getCompletedAmount(
     data = plan
   ) {
 
-    return data.entries.reduce(
+    return allEntries(data).reduce(
       (sum, entry) =>
         sum +
         Number(
@@ -5795,6 +5872,8 @@
     renderHolidays();
 
     renderHistory();
+
+    renderAutoCount();
 
     if (window.SchornsteinPlanerTermine) {
       window.SchornsteinPlanerTermine.render();
@@ -6229,6 +6308,58 @@
 
   }
 
+  function renderAutoCount() {
+
+    const box = document.getElementById("countDoneApts");
+    const amt = document.getElementById("amountPerApt");
+    const info = document.getElementById("autoCountInfo");
+
+    if (!box || !amt || !info) {
+      return;
+    }
+
+    box.checked = plan.countDoneAppointments !== false;
+
+    if (document.activeElement !== amt) {
+      amt.value = String(
+        Number.isFinite(Number(plan.amountPerAppointment))
+          ? plan.amountPerAppointment
+          : 1
+      ).replace(".", ",");
+    }
+
+    amt.disabled = !box.checked;
+
+    const list = doneAppointmentEntries(plan);
+    const sum = list.reduce((n, e) => n + e.amount, 0);
+
+    info.textContent = box.checked
+      ? list.length
+        ? "Angerechnet: " + list.length + " erledigte Termine im Jahr " + plan.year + " = " + formatNumber(sum) + ". Es genügt, den Termin im Kalender abzuhaken – hier musst du ihn nicht noch einmal eintragen."
+        : "Noch keine erledigten Termine im Jahr " + plan.year + ". Sobald du einen Termin im Kalender als erledigt abhakst, wird er hier mitgezählt."
+      : "Aus: Erledigte Termine werden nicht angerechnet. Leistungen trägst du dann nur von Hand ein.";
+
+  }
+
+  function onAutoCountChange() {
+
+    plan.countDoneAppointments =
+      document.getElementById("countDoneApts").checked;
+
+    const n = parseAmount(
+      document.getElementById("amountPerApt").value
+    );
+
+    if (Number.isFinite(n) && n >= 0) {
+      plan.amountPerAppointment = n;
+    }
+
+    saveData();
+
+    renderAll();
+
+  }
+
   function renderHistory() {
 
     const container =
@@ -6236,8 +6367,10 @@
         "historyList"
       );
 
+    const all = allEntries(plan);
+
     if (
-      !plan.entries.length
+      !all.length
     ) {
 
       container.innerHTML = `
@@ -6255,7 +6388,7 @@
     }
 
     const entries =
-      [...plan.entries]
+      [...all]
         .sort(
           (a, b) =>
             b.date.localeCompare(
@@ -6300,7 +6433,10 @@
 
               </div>
 
-              <button
+              ${
+                entry.auto
+                  ? `<span class="list-item-meta" style="white-space:nowrap">✔ aus Termin<br>(im Kalender änderbar)</span>`
+                  : `<button
                 class="btn btn-danger btn-small"
                 type="button"
                 data-delete-entry="${escapeHtml(entry.id)}"
@@ -6308,7 +6444,8 @@
 
                 Löschen
 
-              </button>
+              </button>`
+              }
 
             </div>
 
@@ -6728,8 +6865,6 @@
     $("spPrintRange").addEventListener("click", printRangeProposals);
     $("spExportSelectedIcs").addEventListener("click", () => { const a = appointments().find(x => x.id === moduleState.selectedId); if (a) downloadICS([a], `termin-${a.date}-${a.time.replace(':','')}.ics`); });
     $("spExportRangeIcs").addEventListener("click", exportRange);
-    $("spBackupData").addEventListener("click", backupData);
-    $("spRestoreData").addEventListener("change", restoreData);
     ["spBusinessName","spEmployeeName","spPhone","spBusinessAddress","spBossEmail"].forEach(id => $(id).addEventListener("input", saveSettings));
     ["spProposalFrom","spProposalTo"].forEach(id => $(id).addEventListener("change", renderProposalList));
     $("year").addEventListener("change", () => render());
@@ -8423,15 +8558,6 @@
   function updateActionState() {
     const selected=appointments().find(a=>a.id===moduleState.selectedId); const enabled=!!selected;
     $("spPrintProposal").disabled=!enabled; $("spExportSelectedIcs").disabled=!enabled;
-  }
-
-  function saveBackupObject() { const d=data(); const o={ schema:"schornstein-planer-local-backup", version:1, exportedAt:new Date().toISOString(), data:d }; if (window.SPKunden) o.kunden=window.SPKunden.exportData(); return o; }
-  function backupData() {
-    const blob=new Blob([JSON.stringify(saveBackupObject(),null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`schornstein-planer-backup-${iso(new Date())}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  }
-  function restoreData(event) {
-    const file=event.target.files?.[0]; if(!file) return; const reader=new FileReader();
-    reader.onload=()=>{ try { const obj=JSON.parse(reader.result); if(obj.schema!=="schornstein-planer-local-backup" || !obj.data || typeof obj.data!=="object") throw new Error('Ungültiges Backup'); if(!confirm('Die aktuelle lokale Planung wird durch das Backup ersetzt. Fortfahren?')) return; localStorage.setItem(KEY,JSON.stringify(obj.data)); if (obj.kunden && window.SPKunden) window.SPKunden.importData(obj.kunden); location.reload(); } catch(e){ alert('Die Sicherungsdatei konnte nicht eingelesen werden.'); } finally { event.target.value=""; } }; reader.readAsText(file);
   }
 
   function icsEscape(value) { return String(value||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
