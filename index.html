@@ -1907,6 +1907,7 @@
             <div class="field"><label for="spEmployeeName">Mitarbeiter</label><input id="spEmployeeName" type="text" placeholder="Name des Mitarbeiters"></div>
             <div class="field"><label for="spPhone">Telefon</label><input id="spPhone" type="tel" placeholder="Telefonnummer"></div>
             <div class="field"><label for="spBusinessAddress">Betriebsanschrift</label><input id="spBusinessAddress" type="text" placeholder="Straße, PLZ Ort"></div>
+            <div class="field"><label for="spBossEmail">E-Mail-Adresse des Chefs (für die Erledigt-Liste)</label><input id="spBossEmail" type="email" autocomplete="off" placeholder="chef@beispiel.de"></div>
           </div>
           <div class="sp-day-print">
             <div class="field"><label for="spDayDate">Tag für Tagesübersicht / Erledigt-Liste</label><input id="spDayDate" type="date"></div>
@@ -1915,7 +1916,10 @@
               <button class="btn btn-light" type="button" id="spPrintDays">📋 Alle Tage im Zeitraum (je Tag ein Blatt)</button>
               <button class="btn btn-gold" type="button" id="spPrintDone">✅ Erledigt-Liste drucken (für den Chef)</button>
               <button class="btn btn-light" type="button" id="spPrintDoneRange">✅ Erledigt-Liste für den Zeitraum</button>
+              <button class="btn btn-primary" type="button" id="spMailDone">✉ Erledigt-Liste per E-Mail an den Chef</button>
+              <button class="btn btn-light" type="button" id="spMailDoneRange">✉ … für den Zeitraum per E-Mail</button>
             </div>
+            <p class="sp-muted" id="spMailStatus" hidden style="margin:8px 0 0"></p>
             <div class="sp-exp-box">
               <div class="sp-works-title">Ausgaben aus den Bareinnahmen (z. B. Tanken) – werden in der Erledigt-Liste abgezogen</div>
               <div id="spExpList"></div>
@@ -2697,7 +2701,8 @@
 
       <p>
         Die Anwendung stellt Planungs-, Berechnungs- und Dokumentationsfunktionen
-        zur Verfügung. Die bereitgestellten Berechnungen und Angaben dienen
+        zur Verfügung, darunter Terminplanung, Kundenverwaltung, Erledigt-Listen
+        und Quittungen. Die bereitgestellten Berechnungen und Angaben dienen
         ausschließlich der Unterstützung bei der betrieblichen Planung und
         ersetzen keine eigenständige fachliche, rechtliche oder behördliche Prüfung.
       </p>
@@ -2843,6 +2848,16 @@
         <li>Datum der erfassten Leistungen</li>
         <li>optionale Notizen zu Leistungseinträgen</li>
         <li>individuell eingetragene freie Tage</li>
+        <li>Termine mit Datum, Uhrzeit, Dauer, Tätigkeiten, Fahrzeiten und Notizen</li>
+        <li>Kundendaten aus der Kundenverwaltung, z. B. Kundennummer, Name,
+          Anschrift, Telefonnummer, Bemerkungen, Wunschzeiten und der Standort
+          (Koordinaten) eines Kunden</li>
+        <li>Angaben zur Erledigung von Terminen, z. B. Rechnungsart, bar kassierte
+          Beträge, Ausgaben aus Bareinnahmen und Bemerkungen für den Arbeitgeber</li>
+        <li>Angaben für Quittungen, z. B. Name und Anschrift des Betriebs,
+          Steuernummer, USt-IdNr., Umsatzsteuersatz, Quittungsnummern und die
+          E-Mail-Adresse eines Empfängers für die Erledigt-Liste</li>
+        <li>Rechenwerte und Eingaben des Luftverbund-Rechners</li>
       </ul>
 
       <p>
@@ -2872,11 +2887,12 @@
       </p>
 
       <p>
-        Im Bereich „Planung &amp; Termine“ können Termine angelegt werden. Dabei
-        können vom Nutzer freiwillig Termin- und Kundendaten eingegeben werden,
-        insbesondere Name, Anschrift, Datum, Uhrzeit und Notizen. Auch diese
-        Daten werden ausschließlich lokal im Browser des Nutzers gespeichert.
-      </p>
+        Im Bereich „Planung &amp; Termine“ können Termine angelegt und eine
+        Kundenverwaltung genutzt werden. Dabei können vom Nutzer freiwillig
+        Termin- und Kundendaten eingegeben werden, insbesondere Name, Anschrift,
+        Telefonnummer, Kundennummer, Datum, Uhrzeit, Wunschzeiten, Standort,
+        Zahlungsangaben und Notizen. Auch diese Daten werden ausschließlich lokal
+        im Browser des Nutzers gespeichert.</p>
 
       <p>
         Zusätzlich speichert die Anwendung lokal, ob einzelne Bereiche der
@@ -2948,11 +2964,12 @@
 
       <p>
         Daten verlassen das Gerät des Nutzers nur, wenn der Nutzer dies selbst
-        auslöst, etwa durch den Kalender-Export, die Datensicherung, den Druck
-        eines Terminvorschlags oder das Teilen der erzeugten PDF-Datei über die
-        Funktionen seines Geräts. Für erzeugte Dateien, Ausdrucke und deren
-        Weitergabe ist der Nutzer verantwortlich.
-      </p>
+        auslöst, etwa durch den Kalender-Export, die Gesamtsicherung, den Druck
+        eines Terminvorschlags, einer Quittung oder einer Erledigt-Liste, den
+        Versand einer Datei per E-Mail oder das Teilen der erzeugten PDF-Datei
+        über die Funktionen seines Geräts sowie durch die Adresssuche über
+        OpenStreetMap (siehe Abschnitt 9). Für erzeugte Dateien, Ausdrucke und
+        deren Weitergabe ist der Nutzer verantwortlich.</p>
 
       <p>
         Die lokal gespeicherten Daten sind nicht gesondert verschlüsselt. Der
@@ -3006,7 +3023,74 @@
       </p>
 
       <h2>
-        9. Cookies und Tracking
+        9. Adresssuche und Standort (OpenStreetMap)
+      </h2>
+
+      <p>
+        In der Kundenverwaltung kann der Standort eines Kunden auf zwei Wegen
+        ermittelt werden, um Fahrzeiten und Routen zu planen:
+      </p>
+
+      <ul>
+        <li>
+          <strong>Standort des Geräts (GPS):</strong> Nur wenn der Nutzer die
+          Funktion auslöst und der Standortabfrage im Browser bzw. Betriebssystem
+          zustimmt, liest die Anwendung die aktuellen Koordinaten des Geräts aus
+          und speichert sie lokal beim Kunden. Die Koordinaten werden nicht an
+          den Betreiber übertragen.
+        </li>
+        <li>
+          <strong>Adresssuche über OpenStreetMap:</strong> Wird die Adresssuche
+          ausgelöst (einzeln beim Kunden oder gesammelt für mehrere Kunden),
+          sendet dein Browser die Anschrift des Kunden (Straße, Hausnummer,
+          Postleitzahl, Ort) an den Dienst „Nominatim“ der OpenStreetMap
+          Foundation (nominatim.openstreetmap.org), um die Koordinaten zu
+          ermitteln. Dabei wird technisch bedingt auch die IP-Adresse des
+          Nutzers an diesen Dienst übertragen. Die Anfrage geht direkt vom Gerät
+          des Nutzers an den Anbieter, nicht über den Betreiber dieser Website.
+          Es gelten die Datenschutzhinweise der OpenStreetMap Foundation.
+        </li>
+      </ul>
+
+      <p>
+        Die Adresssuche erfolgt ausschließlich auf Veranlassung des Nutzers. Der
+        Nutzer ist dafür verantwortlich, dass die Weitergabe von Kundenanschriften
+        an diesen Dienst in seinem Betrieb zulässig ist. Wer das nicht möchte,
+        kann die Adresssuche unbenutzt lassen und den Standort per GPS übernehmen
+        oder ohne Standort planen. Die Berechnung von Routen und Fahrzeiten
+        erfolgt lokal auf dem Gerät des Nutzers, ohne einen externen Routendienst.
+      </p>
+
+      <h2>
+        10. Versand der Erledigt-Liste per E-Mail
+      </h2>
+
+      <p>
+        Der Schornstein Planer kann die Erledigt-Liste als PDF-Datei erzeugen und
+        zum Versand an eine vom Nutzer hinterlegte E-Mail-Adresse (z. B. die des
+        Arbeitgebers) vorbereiten. Dazu wird die Teilen-Funktion des Geräts oder
+        das E-Mail-Programm des Nutzers geöffnet.
+      </p>
+
+      <p>
+        Der Schornstein Planer stellt dabei keine Verbindung zu einem E-Mail-Konto
+        her, kennt keine Zugangsdaten und versendet selbst keine E-Mails. Der
+        Betreiber erhält weder die E-Mail-Adresse noch die Liste. Die hinterlegte
+        Empfängeradresse wird nur lokal im Browser gespeichert.
+      </p>
+
+      <p>
+        Die Erledigt-Liste kann personenbezogene Daten von Kunden enthalten (z. B.
+        Name, Anschrift, Kundennummer, Zahlungsart, Beträge und Bemerkungen). Der
+        Nutzer ist dafür verantwortlich, dass er diese Liste nur an dazu befugte
+        Empfänger sendet und dass der Versandweg angemessen geschützt ist.
+        Gewöhnliche E-Mails sind nicht Ende-zu-Ende-verschlüsselt. Werden
+        Kundendaten im Auftrag eines Betriebs verarbeitet, sollte die Nutzung der
+        Anwendung mit dem verantwortlichen Betrieb abgestimmt sein.
+      </p>
+
+      <h2>
+        11. Cookies und Tracking
       </h2>
 
       <p>
@@ -3021,7 +3105,7 @@
       </p>
 
       <h2>
-        10. Externe Links
+        12. Externe Links
       </h2>
 
       <p>
@@ -3045,7 +3129,7 @@
       </p>
 
       <h2>
-        11. Kontaktaufnahme
+        13. Kontaktaufnahme
       </h2>
 
       <p>
@@ -3064,7 +3148,7 @@
       </p>
 
       <h2>
-        12. Deine Rechte
+        14. Deine Rechte
       </h2>
 
       <p>
@@ -3088,7 +3172,7 @@
       </p>
 
       <h2>
-        13. Löschung lokal gespeicherter Planungsdaten
+        15. Löschung lokal gespeicherter Planungsdaten
       </h2>
 
       <p>
@@ -3114,7 +3198,7 @@
       </p>
 
       <h2>
-        14. Aktualität dieser Datenschutzerklärung
+        16. Aktualität dieser Datenschutzerklärung
       </h2>
 
       <p>
@@ -3206,6 +3290,62 @@
       </p>
 
       <h2>
+        Terminplanung, Routen und Anmeldezettel
+      </h2>
+
+      <p>
+        Automatische Terminvorschläge, Routen und Fahrzeiten sind Näherungswerte.
+        Fahrzeiten werden aus der Entfernung zwischen den gespeicherten
+        Standorten geschätzt und berücksichtigen weder Verkehr noch Straßenverlauf.
+        Der Nutzer prüft jeden Terminvorschlag, bevor er ihn verwendet.
+      </p>
+
+      <p>
+        Hinweistexte auf Anmeldezetteln, etwa zur 2. und zur 3. und letzten
+        Anmeldung oder zu gesetzlichen Pflichten des Eigentümers, sind allgemeine
+        Hinweise und keine Rechtsberatung. Der Betrieb bzw. der Nutzer ist dafür
+        verantwortlich, dass Inhalt, Fristen und Verfahren zu den für ihn
+        geltenden Vorgaben passen, und passt die Texte bei Bedarf an.
+      </p>
+
+      <h2>
+        Quittungen, Rechnungsangaben und Erledigt-Liste
+      </h2>
+
+      <p>
+        Die Quittungsfunktion ist ein Hilfsmittel zum Erstellen von Zahlungsbelegen
+        für Barzahlungen. Alle Angaben auf der Quittung, insbesondere Steuernummer,
+        Umsatzsteuersatz bzw. Hinweis auf die Kleinunternehmerregelung,
+        Leistungsbeschreibung und Betrag, werden vom Nutzer eingegeben oder
+        bestätigt. Die Anwendung prüft sie nicht.
+      </p>
+
+      <p>
+        Die Anwendung ersetzt weder eine Buchführung noch eine steuerliche oder
+        rechtliche Beratung. Welche Anforderungen im Einzelfall an Belege,
+        Rechnungsangaben, die Aufzeichnung von Bareinnahmen und die Aufbewahrung
+        gelten, ist vom Betrieb bzw. von dessen Steuerberatung zu klären.
+      </p>
+
+      <p>
+        Quittungsnummern werden lokal auf dem verwendeten Gerät fortlaufend
+        vergeben. Bei Datenverlust, Wiederherstellung einer älteren Sicherung oder
+        Nutzung auf mehreren Geräten können Nummern doppelt vorkommen.
+      </p>
+
+      <h2>
+        Berechnungshilfen
+      </h2>
+
+      <p>
+        Ergebnisse und Lösungsvorschläge der Rechner, etwa des
+        Luftverbund-Rechners, dienen der Unterstützung bei der fachlichen
+        Beurteilung. Sie ersetzen weder die Prüfung der Anlage vor Ort noch die
+        Beurteilung durch eine fachkundige Person und sind nicht anstelle der
+        maßgeblichen technischen Regeln und Herstellerangaben anzuwenden.
+      </p>
+
+      <h2>
         Eigene Eingaben
       </h2>
 
@@ -3221,6 +3361,8 @@
       <p>
         Die Planungsdaten werden lokal im Browser gespeichert. Der Betreiber
         übernimmt daher keine Garantie für deren dauerhafte Verfügbarkeit.
+        Der Nutzer sollte regelmäßig die Gesamtsicherung erstellen und die
+        Sicherungsdatei geschützt aufbewahren.
       </p>
 
       <p>
@@ -3460,6 +3602,7 @@
     <div class="sp-modal-actions">
       <button class="btn btn-light" type="button" id="spCancelAppointment">Abbrechen</button>
       <button class="btn btn-light" type="button" id="spMoveFromApt" hidden>⇄ Verschieben</button>
+      <button class="btn btn-gold" type="button" id="spPrintFromApt">🖨 Speichern &amp; drucken</button>
       <button class="btn btn-light" type="button" id="spDoneFromApt" hidden>✔ Erledigt …</button>
       <button class="btn btn-light" type="button" id="spMissFromApt" hidden>🚪 Nicht angetroffen …</button>
       <button class="btn btn-danger" type="button" id="spDeleteAppointment" hidden>Löschen</button>
@@ -6510,9 +6653,12 @@
     $("spMoveTime").addEventListener("input", updateMoveInfo);
     document.querySelectorAll("[data-mv]").forEach(b => b.addEventListener("click", () => moveQuick(b.dataset.mv)));
     $("spMoveFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openMoveModal(id); });
+    $("spPrintFromApt").addEventListener("click", () => saveAppointment({ print: true }));
     $("spDoneFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openDoneModal(id); });
     $("spPrintDone").addEventListener("click", () => printDone(false));
     $("spPrintDoneRange").addEventListener("click", () => printDone(true));
+    $("spMailDone").addEventListener("click", () => mailDone(false));
+    $("spMailDoneRange").addEventListener("click", () => mailDone(true));
     $("spPrintDay").addEventListener("click", printDay);
     $("spPrintDays").addEventListener("click", printDayRange);
     $("spDayDate").addEventListener("change", () => { moduleState.dayManual = true; renderExpenses(); });
@@ -6556,7 +6702,7 @@
     $("spExportRangeIcs").addEventListener("click", exportRange);
     $("spBackupData").addEventListener("click", backupData);
     $("spRestoreData").addEventListener("change", restoreData);
-    ["spBusinessName","spEmployeeName","spPhone","spBusinessAddress"].forEach(id => $(id).addEventListener("input", saveSettings));
+    ["spBusinessName","spEmployeeName","spPhone","spBusinessAddress","spBossEmail"].forEach(id => $(id).addEventListener("input", saveSettings));
     ["spProposalFrom","spProposalTo"].forEach(id => $(id).addEventListener("change", renderProposalList));
     $("year").addEventListener("change", () => render());
     $("state").addEventListener("change", () => render());
@@ -6567,6 +6713,7 @@
       const xd = e.target.closest("[data-sp-exp-del]"); if (xd) { deleteExp(xd.dataset.spExpDel); return; }
       const ms = e.target.closest("[data-sp-miss]"); if (ms) { openMissModal(ms.dataset.spMiss); return; }
       const mv = e.target.closest("[data-sp-move]"); if (mv) { openMoveModal(mv.dataset.spMove); return; }
+      const pr = e.target.closest("[data-sp-print]"); if (pr) { printAppointmentNow(pr.dataset.spPrint); return; }
       const open = e.target.closest("[data-sp-open]"); if (open) openModal(open.dataset.date, open.dataset.time, open.dataset.spOpen);
       const select = e.target.closest("[data-sp-select]"); if (select) { moduleState.selectedId = select.dataset.spSelect; renderProposalList(); updateActionState(); }
       const edit = e.target.closest("[data-sp-edit]"); if (edit) openModal("", "", edit.dataset.spEdit);
@@ -6580,9 +6727,10 @@
     $("spEmployeeName").value = s.employeeName;
     $("spPhone").value = s.phone;
     $("spBusinessAddress").value = s.businessAddress;
+    $("spBossEmail").value = s.bossEmail || "";
   }
   function saveSettings() {
-    persist({ appointmentSettings: { ...settings(), businessName:$("spBusinessName").value.trim(), employeeName:$("spEmployeeName").value.trim(), phone:$("spPhone").value.trim(), businessAddress:$("spBusinessAddress").value.trim() } });
+    persist({ appointmentSettings: { ...settings(), businessName:$("spBusinessName").value.trim(), employeeName:$("spEmployeeName").value.trim(), phone:$("spPhone").value.trim(), businessAddress:$("spBusinessAddress").value.trim(), bossEmail:$("spBossEmail").value.trim() } });
   }
 
   function move(delta) {
@@ -6632,7 +6780,7 @@
     const inv = a.done && a.invoice ? ` · ${INV_SHORT[a.invoice] || ""}${a.invoice === "bar" && a.amount > 0 ? " " + fmtEUR(a.amount) : ""}` : "";
     const fu = a.missed ? followUpOf(a) : null;
     const missLabel = a.missed ? (fu ? `🚪 Nicht angetroffen · ${esc(attemptLabel(attemptOf(fu)))} am ${esc(shortDate(fu.date))}` : (attemptOf(a) >= 3 ? "🚪 Nicht angetroffen – letzte Anmeldung" : "🚪 Nicht angetroffen – neu anmelden")) : "🚪 Nicht angetroffen";
-    return `<div class="sp-appt-wrap">${btn}<div class="sp-appt-actions"><button type="button" class="sp-act${a.done ? " done" : ""}" data-sp-done="${esc(a.id)}">${a.done ? "✔ Erledigt" + esc(inv) : "☐ Erledigt?"}</button><button type="button" class="sp-act${a.missed ? " missed" : ""}" data-sp-miss="${esc(a.id)}">${missLabel}</button><button type="button" class="sp-act" data-sp-move="${esc(a.id)}">⇄ Verschieben</button></div></div>`;
+    return `<div class="sp-appt-wrap">${btn}<div class="sp-appt-actions"><button type="button" class="sp-act${a.done ? " done" : ""}" data-sp-done="${esc(a.id)}">${a.done ? "✔ Erledigt" + esc(inv) : "☐ Erledigt?"}</button><button type="button" class="sp-act${a.missed ? " missed" : ""}" data-sp-miss="${esc(a.id)}">${missLabel}</button><button type="button" class="sp-act" data-sp-move="${esc(a.id)}">⇄ Verschieben</button><button type="button" class="sp-act" data-sp-print="${esc(a.id)}">🖨 Drucken</button></div></div>`;
   }
   function freeTimeIn(day, hour) {
     const used = appointments().filter(a => a.date === day && Number(a.time.slice(0, 2)) === hour).map(a => a.time);
@@ -8037,7 +8185,7 @@
     setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
   }
 
-  function printDays(dates, mode) {
+  function printDays(dates, mode, deliver = true) {
     const all = appointments();
     const done = mode === "done";
     const days = dates.map(date => {
@@ -8056,7 +8204,63 @@
       : (dates.length === 1 ? "Für diesen Tag sind keine Termine eingetragen." : "Im gewählten Zeitraum sind keine Termine eingetragen."));
     const blob = buildDayPdf(days, settings(), mode);
     const name = (done ? "Erledigt-Liste_" : "Tagesuebersicht_") + days[0].date + (days.length > 1 ? "_bis_" + days[days.length - 1].date : "") + ".pdf";
+    if (!deliver) return { blob, name, days };
     if (window.navigator.standalone === true || isIOSDevice()) sharePdf(blob, name); else openPdfTab(blob, name);
+  }
+
+  /* ================= Erledigt-Liste per E-Mail an den Chef ================= */
+  function mailStatus(msg) { const el = $("spMailStatus"); el.textContent = msg; el.hidden = !msg; }
+  function doneDatesFor(range) {
+    if (!range) { const d = $("spDayDate").value; if (!d) { alert("Bitte einen Tag wählen."); return null; } return [d]; }
+    const from = $("spProposalFrom").value, to = $("spProposalTo").value;
+    if (!from || !to || from > to) { alert("Bitte oben bei „Von“ und „Bis“ einen gültigen Zeitraum wählen."); return null; }
+    const dates = [];
+    for (let d = fromIso(from); iso(d) <= to; d = addDays(d, 1)) dates.push(iso(d));
+    return dates;
+  }
+  async function mailDone(range) {
+    const to = ($("spBossEmail").value || "").trim();
+    if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(to)) {
+      alert("Bitte zuerst oben die E-Mail-Adresse des Chefs eintragen.");
+      $("spBossEmail").scrollIntoView({ block: "center" }); $("spBossEmail").focus();
+      return;
+    }
+    const dates = doneDatesFor(range);
+    if (!dates) return;
+    const doc = printDays(dates, "done", false);
+    if (!doc) return;
+    const s = settings(), days = doc.days;
+    const first = days[0].date, last = days[days.length - 1].date;
+    const when = first === last ? shortDate(first) : shortDate(first) + " bis " + shortDate(last);
+    const who = s.employeeName || s.businessName || "";
+    let count = 0, bar = 0, barMissing = 0, exp = 0;
+    days.forEach(d => { count += d.items.length; (d.expenses || []).forEach(x => { exp += x.amount; }); d.items.forEach(a => { if (a.invoice === "bar") { if (a.amount > 0) bar += a.amount; else barMissing++; } }); });
+    const subject = "Erledigt-Liste " + when + (who ? " – " + who : "");
+    const lines = ["Hallo,", "", "anbei die Erledigt-Liste für " + (first === last ? "den " : "den Zeitraum ") + when + ".", "", "Erledigte Termine: " + count];
+    if (bar > 0 || barMissing) lines.push("Bar kassiert: " + fmtEUR(bar) + (barMissing ? " (bei " + barMissing + " Termin" + (barMissing > 1 ? "en" : "") + " fehlt der Betrag)" : ""));
+    if (exp > 0) lines.push("Ausgaben aus Bareinnahmen: " + fmtEUR(exp), "Bar abzuliefern: " + fmtEUR(bar - exp));
+    lines.push("", "Viele Grüße", who);
+    const body = lines.join("\n");
+
+    const file = new File([doc.blob], doc.name, { type: "application/pdf" });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.clipboard.writeText(to); } catch (e) {}
+        mailStatus("Wähle im Teilen-Fenster dein E-Mail-Programm. Die Adresse des Chefs (" + to + ") ist in die Zwischenablage kopiert – falls sie nicht eingetragen ist, einfach einfügen.");
+        await navigator.share({ files: [file], title: subject, text: body });
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === "AbortError") { mailStatus(""); return; }
+    }
+    /* Ohne Teilen-Funktion (z. B. manche PC-Browser): PDF speichern und die Mail mit Empfänger, Betreff und Text öffnen */
+    const url = URL.createObjectURL(doc.blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = doc.name;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    mailStatus("Die PDF-Datei „" + doc.name + "“ wurde gespeichert (Ordner „Downloads“). Bitte in der gleich geöffneten E-Mail als Anhang einfügen.");
+    setTimeout(() => { window.location.href = "mailto:" + encodeURIComponent(to).replace(/%40/g, "@") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body); }, 400);
   }
   function printDay() {
     const d = $("spDayDate").value;
@@ -8078,7 +8282,8 @@
     printDays([d], "done");
   }
 
-  function saveAppointment() {
+  function saveAppointment(opts) {
+    const doPrint = !!(opts && opts.print === true);
     const date=$("spAptDate").value, time=$("spAptTime").value;
     if (!date || !time) return alert("Bitte Datum und Uhrzeit angeben.");
     const holiday=holidayMap(new Date(date).getFullYear()).get(date);
@@ -8087,7 +8292,15 @@
     if (clash && !confirm(`Der Termin überschneidet sich mit dem Termin um ${clash.time} Uhr (${clash.customer || "ohne Namen"}). Trotzdem speichern?`)) return;
     const item={ id:moduleState.editingId || uuid(), date,time, customer:$("spAptCustomer").value.trim(), street:$("spAptStreet").value.trim(), house:$("spAptHouse").value.trim(), zip:$("spAptZip").value.trim(), city:$("spAptCity").value.trim(), duration:Number($("spAptDuration").value)||15, notes:$("spAptNotes").value.trim(), bossNote:$("spAptBossNote").value.trim(), travelBefore:clampTravel($("spAptTravelB").value), travelAfter:clampTravel($("spAptTravelA").value), works:selectedWorks(), workOther:$("spWorkOtherText").value.trim(), kid:moduleState.aptCustomer?.id||"", knr:moduleState.aptCustomer?.nr||"", ...(moduleState.pendingRetry && !moduleState.editingId ? { attempt: moduleState.pendingRetry.attempt, prevId: moduleState.pendingRetry.prevId } : {}), updatedAt:new Date().toISOString() };
     const list=appointments(); const idx=list.findIndex(x=>x.id===item.id); if(idx>=0) list[idx]={ ...list[idx], ...item }; else list.push(item);
-    persist({appointments:list}); moduleState.selectedId=item.id; moduleState.date=fromIso(date); closeModal(); render(); warnStale(item.id);
+    persist({appointments:list}); moduleState.selectedId=item.id; moduleState.date=fromIso(date); closeModal(); render();
+    if (doPrint) printAppointmentNow(item.id); else warnStale(item.id);
+  }
+  /* Einzelnen Termin direkt drucken (A5 auf halber A4-Seite), ohne vorher auswählen zu müssen */
+  function printAppointmentNow(id) {
+    const a = appointments().find(x => x.id === id);
+    if (!a) return;
+    moduleState.selectedId = id;
+    printProposals([a], true, "Terminvorschlag_" + a.date + ".pdf");
   }
   function deleteAppointment() {
     if (!moduleState.editingId) return;
