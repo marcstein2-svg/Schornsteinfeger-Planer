@@ -531,13 +531,11 @@
     ".kv-row:hover,.kv-row:focus-visible{background:#fffaf0;outline:none}" +
     ".kv-prog{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}" +
     ".kv-prog-l{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}" +
-    ".kv-progb{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid #d5d9dd;background:#fff;border-radius:12px;padding:8px 14px;min-height:44px;font:inherit;color:var(--text);cursor:pointer;text-align:left}" +
+    ".kv-progb{display:flex;align-items:center;justify-content:center;width:170px;border:1px solid #d5d9dd;background:#fff;border-radius:12px;padding:8px 14px;min-height:44px;font:inherit;color:var(--text);cursor:pointer;text-align:center}" +
     ".kv-progb strong{font-size:.95rem}" +
-    ".kv-progb small{font-size:.74rem;color:var(--muted)}" +
     ".kv-progb:hover{border-color:var(--gold)}" +
-    "@media (max-width:600px){.kv-prog-l{flex:0 0 100%}.kv-progb{flex:1 1 0;min-width:0}}" +
+    "@media (max-width:600px){.kv-prog-l{flex:0 0 100%}.kv-progb{flex:1 1 0;width:auto;min-width:0}}" +
     ".kv-progb.on{background:var(--dark);border-color:var(--dark);color:#fff}" +
-    ".kv-progb.on small{color:#d3d8dd}" +
     ".kv-apt{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:#f1f3f5;color:#7a6a45;font-size:.72rem;font-weight:700;line-height:1.5;vertical-align:1px;cursor:pointer;white-space:nowrap}" +
     ".kv-apt:hover,.kv-apt:focus-visible{background:#f7ecd2;color:#4d3d17;outline:none}" +
     ".kv-popbg{position:fixed;inset:0;z-index:10000;background:rgba(20,25,30,.4);display:flex;align-items:center;justify-content:center;padding:16px}" +
@@ -2114,19 +2112,13 @@
     if (!box) return;
 
     var cur = getProg();
-    var cnt = { hottgenroth: 0, dexheimer: 0 };
-
-    kunden.forEach(function (k) {
-      cnt[progOfNr(k.nr)]++;
-    });
-
     box.innerHTML =
       '<span class="kv-prog-l">Programm</span>' +
       Object.keys(PROGS)
         .map(function (key) {
           return (
             '<button type="button" class="kv-progb' + (key === cur ? " on" : "") + '" data-prog="' + key + '" aria-pressed="' + (key === cur) + '">' +
-            "<strong>" + E(PROGS[key].name) + "</strong><small>" + E(PROGS[key].ex) + " · " + cnt[key] + (cnt[key] === 1 ? " Kunde" : " Kunden") + "</small></button>"
+            "<strong>" + E(PROGS[key].name) + "</strong></button>"
           );
         })
         .join("");
