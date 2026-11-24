@@ -12,14 +12,24 @@
 
   <meta
     name="description"
-    content="Digitale Arbeitsplanung für das Schornsteinfeger-Handwerk."
+    content="Termine, Kunden, Anmeldungen, Rechner und Jahresplanung für das Schornsteinfeger-Handwerk."
   >
 
   <meta name="theme-color" content="#20252b">
 
   <link rel="manifest" href="manifest.webmanifest">
 
-  <link rel="icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <meta name="apple-mobile-web-app-title" content="Schornstein">
+
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
   <style>
 
@@ -1444,6 +1454,8 @@
     @media (max-width: 760px) {
       .sp-toolbar .sp-actions-row .btn-gold, .sp-toolbar .sp-actions-row .btn-primary { flex: 1 1 100%; }
       .sp-toolbar .sp-actions-row .sp-minor { flex: 1 1 calc(50% - 4px); }
+      .sp-toolbar .sp-actions-row details.sp-toolmore > summary { width: 100%; }
+      .sp-tab { flex: 1 1 calc(50% - 6px); }
       .sp-btnrow { grid-template-columns: 1fr; }
     }
     .sp-search-old { margin-bottom: 12px; }
@@ -1504,6 +1516,16 @@
     .sp-linkbtn { border: 0; background: none; padding: 0; font: inherit; font-weight: 800; color: #7d5b20; text-decoration: underline; cursor: pointer; }
     .sp-hour-body > .sp-add { align-self: start; min-height: 40px; }
     .sp-exp-box { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .sp-stats { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 2px 0 10px; }
+    .sp-stat { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #d5d9dd; border-radius: 999px; padding: 6px 14px; min-height: 40px; font: inherit; font-size: .95rem; font-weight: 700; color: #22272d; }
+    .sp-stat strong { font-size: 1.05rem; }
+    .sp-stat.all-done { background: #f3faf5; border-color: #b9dcc6; }
+    button.sp-stat { cursor: pointer; }
+    button.sp-stat:hover { border-color: #c79a42; background: #fbf5e7; }
+    .sp-stat.neg strong { color: #a02f2f; }
+    .sp-cash-big { font-size: 2rem; font-weight: 900; line-height: 1.1; }
+    .sp-cash-lines { margin: 10px 0; font-size: .92rem; }
+    .sp-cash-lines div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid #eceff1; }
     .sp-exp-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eceff1; }
     .sp-exp-row span { flex: 1; min-width: 0; }
     .sp-exp-row button { border: 0; background: #fdecec; color: #a02f2f; border-radius: 8px; min-height: 34px; min-width: 38px; font-weight: 800; cursor: pointer; }
@@ -1519,6 +1541,21 @@
     .sp-act.missed { border-color: #c9791b; background: #fff1dc; color: #8a4b00; }
     .sp-badge-warn { background: #fde0e0; color: #a02f2f; }
     .sp-badge-wish { background: #e3f1e8; color: #2e6f45; }
+    .sp-pool-count { display: inline-block; min-width: 20px; margin-left: 6px; padding: 0 6px; border-radius: 999px; background: #20252b; color: #fff; font-size: .72rem; font-weight: 800; line-height: 20px; text-align: center; }
+    .sp-pool-count[hidden] { display: none; }
+    #spWaOpen[hidden] { display: none; }
+    #spWaOpen.has-items { border-color: #2e8b57; background: #e9f7ee; }
+    #spWaModal [hidden] { display: none !important; }
+    #spPoolOpen.has-items { border-color: #c79a42; background: #fff6df; }
+    .sp-pool-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #e3e7ea; }
+    .sp-pool-row small { display: block; color: #6c757d; font-weight: 600; }
+    .sp-pool-why { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #e3f1e8; color: #2e6f45; font-size: .7rem; font-weight: 800; }
+    .sp-pool-why.moved { background: #fbe3c2; color: #7a4600; }
+    .sp-pool-x { border: 1px solid #d5dadf; background: #fff; border-radius: 9px; padding: 4px 10px; cursor: pointer; font-weight: 800; }
+    .sp-wishapt { margin-top: 12px; padding: 12px 14px; border: 1px solid #e3d3a8; border-radius: 12px; background: #fffaf0; }
+    .sp-badge-time { background: #fff1c9; color: #7a5200; }
+    .sp-badge-time.sp-badge-line { margin: 4px 0 3px 0; }
+    .sp-badge-time.bad { background: #fbd5d5; color: #8f2f2f; }
     .sp-badge-line { display: block; width: max-content; margin: 2px 0 1px; }
     .sp-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #fbe3c2; color: #7a4600; font-size: .7rem; font-weight: 800; white-space: nowrap; }
     .sp-appt-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -1534,6 +1571,41 @@
     .sp-inv.on { border-color: #3f8f5b; background: #e7f4ec; }
     .sp-cash { margin-top: 12px; padding: 12px 14px; border: 1px solid #3f8f5b; border-radius: 12px; background: #f3faf5; }
     .sp-modal-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .sp-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .sp-tab { flex: 1 1 auto; min-height: 46px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 11px; background: #f7f8f9; color: var(--text); font: inherit; font-weight: 800; font-size: .92rem; cursor: pointer; }
+    .sp-tab:hover { background: #eef0f2; }
+    .sp-tab.is-on { background: #20252b; border-color: #20252b; color: #fff; }
+    [data-sp-ppanel][hidden], #spDayField[hidden], #spPrintDates[hidden] { display: none !important; }
+    .sp-done-row { margin-top: 12px; }
+    .sp-done-row > span { display: block; margin-bottom: 6px; font-weight: 800; font-size: .9rem; }
+    .sp-hintline { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; margin-top: 4px; padding: 3px 8px; border-radius: 7px; background: #fff1c9; color: #7a5200; font-size: .78rem; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; text-align: left; }
+    .sp-modal-more[hidden], .sp-hint-cust[hidden], #spMsgModal [hidden] { display: none !important; }
+    .sp-hintbox { margin-top: 12px; padding: 12px 14px; border: 1px solid #ecd9a8; border-radius: 12px; background: #fffaf0; }
+    .sp-hintbox label { font-weight: 800; }
+    .sp-hint-cust { margin: 0 0 8px; font-size: .86rem; font-weight: 700; color: #7a5200; overflow-wrap: anywhere; }
+    .sp-modal-more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .sp-modal-more .btn { min-height: 40px; padding: 6px 12px; font-size: .86rem; }
+    details.sp-fields { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; background: #fbfbfc; }
+    details.sp-fields > summary { cursor: pointer; list-style: none; padding: 12px 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    details.sp-fields > summary::-webkit-details-marker { display: none; }
+    details.sp-fields > summary small { font-weight: 600; color: var(--muted); }
+    details.sp-fields > summary::after { content: "▾"; margin-left: auto; color: #7d5b20; }
+    details.sp-fields[open] > summary::after { content: "▴"; }
+    details.sp-fields > .sp-fields-body { padding: 0 14px 14px; }
+    details.sp-fields .sp-wishapt { margin-top: 12px; }
+    details.sp-toolmore { position: relative; display: inline-block; }
+    details.sp-toolmore > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    details.sp-toolmore > summary::-webkit-details-marker { display: none; }
+    details.sp-toolmore[open] > summary { border-color: var(--gold); background: #fffaf0; }
+    .sp-toolmore-menu { position: absolute; left: 0; top: calc(100% + 6px); z-index: 40; min-width: 240px; display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.16); }
+    .sp-toolmore-menu .btn { justify-content: flex-start; width: 100%; }
+    .sp-msg-who { font-weight: 800; margin-bottom: 8px; overflow-wrap: anywhere; }
+    .sp-msg-who small { display: block; font-weight: 600; color: var(--muted); }
+    .sp-msg-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: .86rem; color: var(--muted); font-weight: 700; }
+    #spMsgText { min-height: 170px; font-size: 16px; line-height: 1.45; }
+    .sp-msg-state { margin-top: 10px; font-weight: 700; font-size: .88rem; }
+    .sp-badge-ann { background: #e1f1e6; color: #24613b; }
+    .sp-badge-ann.stale { background: #fbd5d5; color: #8f2f2f; }
     .sp-danger { color: var(--red); }
 
     @media (max-width: 850px) {
@@ -1545,6 +1617,13 @@
     @media (max-width: 600px) {
       .sp-calendar-card { padding: 14px; }
       .sp-form-grid { grid-template-columns: 1fr; }
+      /* Termin-Fenster am Handy: kurze Felder nebeneinander, damit das Fenster nicht so lang wird */
+      #spAppointmentModal .sp-form-grid, details.sp-fields .sp-form-grid, .sp-wishapt .sp-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #spAppointmentModal .sp-form-grid .sp-full { grid-column: 1 / -1; }
+      .sp-toolbar .sp-actions-row details.sp-toolmore { flex: 1 1 100%; }
+      #spAppointmentModal .sp-modal-actions .btn { flex: 1 1 100%; justify-content: center; }
+      #spAppointmentModal .sp-modal-actions #spCancelAppointment, #spAppointmentModal .sp-modal-actions #spDeleteAppointment:not([hidden]) { flex: 1 1 calc(50% - 4px); }
+      details.sp-fields > summary small { display: none; }
       .sp-toolbar strong { min-width: 0; width: 100%; order: 5; margin-left: 0; }
     }
 
@@ -1877,14 +1956,17 @@
         </span>
 
         <h1>
-          Deine Jahresplanung.<br>
-          Deine Leistung. Dein Überblick.
+          Deine Termine.<br>
+          Deine Kunden.<br>
+          Dein Überblick.
         </h1>
 
         <p>
-          Plane deine Jahresmenge automatisch,
-          berücksichtige Feiertage und freie Tage
-          und sieh jederzeit, ob du im Soll liegst.
+          Plane Termine und Fahrtroute automatisch,
+          melde Kunden per Zettel oder WhatsApp an,
+          rechne Luftverbund und Schornsteinhöhe
+          und sieh jederzeit, ob du mit deiner
+          Jahresmenge im Soll liegst.
         </p>
 
       </div>
@@ -1940,6 +2022,11 @@
         <div class="sp-search-results" id="spSearchResults" hidden></div>
       </div>
 
+      <div class="sp-stats" id="spStats">
+        <span class="sp-stat" id="spStatDone" title="Erledigte Termine / alle Termine im angezeigten Zeitraum">✔ <strong id="spStatDoneNum">0/0</strong> Häuser</span>
+        <button type="button" class="sp-stat" id="spCashOpen" title="Bargeld: so viel muss in der Kasse sein – hier trägst du ein, wann du dem Chef Geld gegeben hast">💶 Kasse <strong id="spCashNum">0,00 €</strong></button>
+      </div>
+
       <div class="sp-toolbar">
         <div class="sp-toolbar-group sp-nav-group">
           <button class="btn btn-light" type="button" id="spPrevPeriod">‹</button>
@@ -1954,8 +2041,16 @@
         <div class="sp-toolbar-group sp-actions-row">
           <button class="btn btn-gold" type="button" id="spNewAppointment">+ Termin</button>
           <button class="btn btn-primary" type="button" id="spAutoOpen">⚡ Termine automatisch einplanen</button>
+          <button class="btn btn-light sp-minor" type="button" id="spWaOpen" hidden>💬 WhatsApp-Pool<span class="sp-pool-count" id="spWaCount" hidden>0</span></button>
+          <button class="btn btn-light sp-minor" type="button" id="spPoolOpen">🗂 Druckpool<span class="sp-pool-count" id="spPoolCount" hidden>0</span></button>
           <button class="btn btn-light sp-minor" type="button" id="spMapRoute">🗺 Route des Tages</button>
-          <button class="btn btn-light sp-minor" type="button" id="spToggleEmpty">Freie Stunden zeigen</button>
+          <details class="sp-toolmore sp-minor" id="spToolMore">
+            <summary class="btn btn-light sp-minor">⋯ Mehr</summary>
+            <div class="sp-toolmore-menu">
+              <button class="btn btn-light" type="button" id="spMsgDay">📲 Termine des Tages ansagen</button>
+              <button class="btn btn-light" type="button" id="spToggleEmpty">Freie Stunden zeigen</button>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -1985,24 +2080,28 @@
         <details class="sp-collapse sp-collapse-inner" data-sp-collapse="print">
           <summary>
             <span aria-hidden="true">🖨</span>
-            <span>Drucken &amp; Listen</span>
-            <span class="sp-collapse-hint">Anmeldezettel · Tagesübersicht · Erledigt-Liste</span>
+            <span>Drucken, Listen &amp; Export</span>
+            <span class="sp-collapse-hint">Zettel · Tagesübersicht · Erledigt-Liste · Kalender</span>
             <span class="sp-chevron" aria-hidden="true"></span>
           </summary>
           <div class="sp-collapse-body">
-            <div class="sp-block sp-print-range">
-              <h4>Zeitraum und Tag wählen</h4>
+            <div class="sp-tabs" id="spPrintTabs" role="tablist">
+              <button type="button" class="sp-tab is-on" role="tab" data-sp-ptab="slip">🖨 Anmeldezettel</button>
+              <button type="button" class="sp-tab" role="tab" data-sp-ptab="day">📋 Tagesübersicht</button>
+              <button type="button" class="sp-tab" role="tab" data-sp-ptab="done">✅ Erledigt-Liste</button>
+              <button type="button" class="sp-tab" role="tab" data-sp-ptab="ics">📅 Kalender-Export</button>
+            </div>
+
+            <div class="sp-block sp-print-range" id="spPrintDates">
               <div class="sp-form-grid">
                 <div class="field"><label for="spProposalFrom">Von</label><input id="spProposalFrom" type="date"></div>
                 <div class="field"><label for="spProposalTo">Bis</label><input id="spProposalTo" type="date"></div>
-                <div class="field"><label for="spDayDate">Einzelner Tag</label><input id="spDayDate" type="date"></div>
+                <div class="field" id="spDayField" hidden><label for="spDayDate">Einzelner Tag</label><input id="spDayDate" type="date"></div>
               </div>
-              <p class="sp-muted" style="margin:8px 0 0">„Von / Bis“ gilt für alle Knöpfe mit „Zeitraum“, „Einzelner Tag“ für die Tages-Knöpfe.</p>
             </div>
 
-            <div class="sp-block">
-              <h4>🖨 Anmeldezettel für Kunden</h4>
-              <p class="sp-muted" style="margin:0 0 8px">Ein Termin als A5-Blatt (halbe A4-Seite im Querformat) oder alle Termine des Zeitraums, 2 pro A4-Seite. Einzelne Termine druckst du am schnellsten direkt im Kalender mit „🖨 Drucken“.</p>
+            <div class="sp-block" data-sp-ppanel="slip">
+              <p class="sp-muted" style="margin:0 0 8px">Ein Termin als A5-Blatt (halbe A4-Seite im Querformat) oder alle Termine des Zeitraums, 2 pro A4-Seite. Einzelne Termine druckst du am schnellsten direkt im Kalender mit „🖨 Drucken“, mehrere über den Druckpool.</p>
               <div id="spProposalList" class="sp-proposal-list"></div>
               <div class="sp-btnrow">
                 <button class="btn btn-primary" type="button" id="spPrintProposal" disabled>🖨 Ausgewählten Termin drucken</button>
@@ -2010,28 +2109,51 @@
               </div>
             </div>
 
-            <div class="sp-block">
-              <h4>📋 Tagesübersicht für dich</h4>
+            <div class="sp-block" data-sp-ppanel="day" hidden>
+              <p class="sp-muted" style="margin:0 0 8px">Deine Liste zum Abhaken, immer auf einer A4-Seite pro Tag, mit Hinweisen für unterwegs.</p>
               <div class="sp-btnrow">
-                <button class="btn btn-primary" type="button" id="spPrintDay">📋 Tagesübersicht drucken</button>
+                <button class="btn btn-primary" type="button" id="spPrintDay">📋 Einzelnen Tag drucken</button>
                 <button class="btn btn-light" type="button" id="spPrintDays">📋 Alle Tage im Zeitraum (je Tag ein Blatt)</button>
               </div>
             </div>
 
-            <div class="sp-block">
-              <h4>✅ Erledigt-Liste für den Chef</h4>
-              <div class="sp-btnrow">
-                <button class="btn btn-gold" type="button" id="spPrintDone">✅ Erledigt-Liste drucken</button>
-                <button class="btn btn-light" type="button" id="spPrintDoneRange">✅ Zeitraum drucken</button>
-                <button class="btn btn-primary" type="button" id="spMailDone">✉ Per E-Mail an den Chef</button>
-                <button class="btn btn-light" type="button" id="spMailDoneRange">✉ Zeitraum per E-Mail</button>
+            <div class="sp-block" data-sp-ppanel="done" hidden>
+              <p class="sp-muted" style="margin:0 0 4px">Liste der erledigten Termine für den Chef. „Einzelner Tag“ und „Zeitraum“ wählst du oben.</p>
+              <div class="sp-done-row"><span>Drucken</span>
+                <div class="sp-btnrow">
+                  <button class="btn btn-gold" type="button" id="spPrintDone">✅ Einzelnen Tag drucken</button>
+                  <button class="btn btn-light" type="button" id="spPrintDoneRange">✅ Zeitraum drucken</button>
+                </div>
+              </div>
+              <div class="sp-done-row"><span>Per E-Mail an den Chef</span>
+                <div class="sp-btnrow">
+                  <button class="btn btn-primary" type="button" id="spMailDone">✉ Einzelnen Tag per E-Mail</button>
+                  <button class="btn btn-light" type="button" id="spMailDoneRange">✉ Zeitraum per E-Mail</button>
+                </div>
               </div>
               <p class="sp-muted" id="spMailStatus" hidden style="margin:8px 0 0"></p>
-              <div class="field" style="margin-top:12px"><label for="spBossEmail">E-Mail-Adresse des Chefs</label><input id="spBossEmail" type="email" autocomplete="off" placeholder="chef@beispiel.de"></div>
-              <div class="sp-exp-box">
-                <div class="sp-works-title">Ausgaben aus den Bareinnahmen (z. B. Tanken) – werden in der Erledigt-Liste abgezogen</div>
-                <div id="spExpList"></div>
-                <button class="btn btn-light" type="button" id="spExpAdd" style="margin-top:8px">＋ Ausgabe eintragen</button>
+              <details class="sp-fields" id="spBossBox">
+                <summary>E-Mail-Adresse des Chefs &amp; Ausgaben <small>Tanken usw. von den Bareinnahmen abziehen</small></summary>
+                <div class="sp-fields-body">
+                  <div class="field" style="margin-top:12px"><label for="spBossEmail">E-Mail-Adresse des Chefs</label><input id="spBossEmail" type="email" autocomplete="off" placeholder="chef@beispiel.de"></div>
+                  <div class="sp-exp-box">
+                    <div class="sp-works-title">Ausgaben aus den Bareinnahmen (z. B. Tanken) – werden in der Erledigt-Liste abgezogen</div>
+                    <div id="spExpList"></div>
+                    <button class="btn btn-light" type="button" id="spExpAdd" style="margin-top:8px">＋ Ausgabe eintragen</button>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div class="sp-block" data-sp-ppanel="ics" hidden>
+              <p class="sp-muted" style="margin:0 0 8px">Exportiere einen einzelnen Termin oder alle Termine eines Zeitraums für Android, iOS und andere Kalenderprogramme.</p>
+              <div class="sp-form-grid">
+                <div class="field"><label for="spExportFrom">Von</label><input id="spExportFrom" type="date"></div>
+                <div class="field"><label for="spExportTo">Bis</label><input id="spExportTo" type="date"></div>
+              </div>
+              <div class="sp-btnrow" style="margin-top:10px">
+                <button class="btn btn-gold" type="button" id="spExportRangeIcs">📅 Zeitraum als Kalender exportieren</button>
+                <button class="btn btn-light" type="button" id="spExportSelectedIcs" disabled>📅 Ausgewählten Termin exportieren</button>
               </div>
             </div>
           </div>
@@ -2054,24 +2176,6 @@
           </div>
         </details>
 
-        <details class="sp-collapse sp-collapse-inner" data-sp-collapse="export">
-          <summary>
-            <span aria-hidden="true">📅</span>
-            <span>Kalender-Export</span>
-            <span class="sp-chevron" aria-hidden="true"></span>
-          </summary>
-          <div class="sp-collapse-body">
-            <p class="sp-muted">Exportiere einen einzelnen Termin oder alle Termine eines Zeitraums für Android, iOS und andere Kalenderprogramme.</p>
-            <div class="sp-form-grid">
-              <div class="field"><label for="spExportFrom">Von</label><input id="spExportFrom" type="date"></div>
-              <div class="field"><label for="spExportTo">Bis</label><input id="spExportTo" type="date"></div>
-            </div>
-            <div class="sp-btnrow" style="margin-top:10px">
-              <button class="btn btn-gold" type="button" id="spExportRangeIcs">📅 Zeitraum als Kalender exportieren</button>
-              <button class="btn btn-light" type="button" id="spExportSelectedIcs" disabled>📅 Ausgewählten Termin exportieren</button>
-            </div>
-          </div>
-        </details>
       </div>
 
     </section>
@@ -3210,6 +3314,19 @@
       </p>
 
       <p>
+        <strong>Terminansage per WhatsApp, SMS oder E-Mail:</strong> Mit der
+        Funktion „Termin ansagen“ wird ein Nachrichtentext aus den Termindaten
+        (Datum, Zeitfenster, Arbeiten, Adresse) erzeugt und die App WhatsApp, die
+        SMS-App oder das E-Mail-Programm des Geräts mit diesem Text geöffnet. Die
+        Nachricht wird erst gesendet, wenn der Nutzer sie dort selbst absendet;
+        der Betreiber dieser Website erhält keine Daten. Beim Öffnen von
+        WhatsApp wird die Adresse wa.me aufgerufen (Anbieter: WhatsApp). Der
+        Nutzer ist dafür verantwortlich, dass die Kontaktaufnahme zum Kunden auf
+        diesem Weg in seinem Betrieb zulässig ist. Die hinterlegten
+        Telefonnummern und Hinweise bleiben lokal im Browser gespeichert.
+      </p>
+
+      <p>
         Der Schornstein Planer stellt dabei keine Verbindung zu einem E-Mail-Konto
         her, kennt keine Zugangsdaten und versendet selbst keine E-Mails. Der
         Betreiber erhält weder die E-Mail-Adresse noch die Liste. Die hinterlegte
@@ -3554,6 +3671,7 @@
       <button class="btn btn-light" type="button" id="spDoneCancel">Abbrechen</button>
       <button class="btn btn-light" type="button" id="spDoneNoteSave">Nur Bemerkung speichern</button>
       <button class="btn btn-gold" type="button" id="spReceiptOpen" hidden>🧾 Quittung erstellen</button>
+      <button class="btn btn-light" type="button" id="spSweepFromDone">🧹 Kehr-Zettel drucken</button>
       <button class="btn btn-danger" type="button" id="spDoneUndo" hidden>Als nicht erledigt markieren</button>
     </div>
   </div>
@@ -3593,6 +3711,27 @@
   </div>
 </div>
 
+<div class="sp-modal-backdrop" id="spCashModal" hidden>
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spCashTitle" style="max-width:520px">
+    <h3 id="spCashTitle">💶 Kasse – Bargeld</h3>
+    <div class="sp-muted">In der Kasse müssen jetzt sein:</div>
+    <div class="sp-cash-big" id="spCashBig">0,00 €</div>
+    <div class="sp-cash-lines" id="spCashLines"></div>
+    <div class="sp-works-title" style="margin-top:12px">Geld an den Chef übergeben</div>
+    <div class="sp-form-grid">
+      <div class="field"><label for="spHandDate">Datum</label><input id="spHandDate" type="date"></div>
+      <div class="field"><label for="spHandAmount">Betrag (€)</label><input id="spHandAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 250,00"></div>
+    </div>
+    <div style="margin-top:10px"><button type="button" class="btn btn-gold" id="spCashHand">✔ Übergeben eintragen</button></div>
+    <div id="spCashHist" style="margin-top:12px"></div>
+    <details class="sp-fields" style="margin-top:12px"><summary>Zählung ab <small>nur Bareinnahmen ab diesem Tag zählen</small></summary>
+      <div class="field" style="margin-top:8px"><label for="spCashStart">Bareinnahmen zählen ab</label><input id="spCashStart" type="date"></div>
+      <p class="sp-muted" style="margin:6px 0 0">Leer lassen = alle bar kassierten, erledigten Termine zählen. Praktisch, wenn du nach einer Abrechnung neu anfangen willst.</p>
+    </details>
+    <div class="sp-modal-actions"><button class="btn btn-light" type="button" id="spCashClose">Schließen</button></div>
+  </div>
+</div>
+
 <div class="sp-modal-backdrop" id="spExpModal" hidden>
   <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spExpTitle" style="max-width:520px">
     <h3 id="spExpTitle">Ausgabe aus den Bareinnahmen</h3>
@@ -3611,6 +3750,22 @@
     <div class="sp-modal-actions">
       <button class="btn btn-light" type="button" id="spExpCancel">Abbrechen</button>
       <button class="btn btn-primary" type="button" id="spExpSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="sp-modal-backdrop" id="spSweepModal" hidden>
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spSweepTitle" style="max-width:520px">
+    <h3 id="spSweepTitle">🧹 Kehr-Zettel</h3>
+    <p class="sp-muted" style="margin:-4px 0 12px">Für Kunden, bei denen der Schornstein frei zugänglich ist und du ihn auch ohne sie kehren darfst. Auf dem Zettel stehen Datum und Uhrzeit der Kehrung, ein Dank für das Vertrauen und deine Telefonnummer.</p>
+    <div class="field"><label for="spSweepDate">Datum der Kehrung</label><input id="spSweepDate" type="date"></div>
+    <div class="sp-works-title" style="margin-top:12px">Häuser und Uhrzeit der Kehrung</div>
+    <div id="spSweepRows"></div>
+    <div style="margin-top:8px"><button type="button" class="btn btn-light" id="spSweepNow">🕐 Uhrzeit auf jetzt setzen</button></div>
+    <div class="sp-modal-actions">
+      <button class="btn btn-light" type="button" id="spSweepCancel">Abbrechen</button>
+      <button class="btn btn-light" type="button" id="spSweepPool">🗂 In den Druckpool</button>
+      <button class="btn btn-gold" type="button" id="spSweepPrint">🖨 Jetzt drucken</button>
     </div>
   </div>
 </div>
@@ -3692,6 +3847,7 @@
     <div class="sp-muted" style="margin-top:10px;font-size:.84rem">Die Dauer je Kunde ergibt sich aus der gewählten Tätigkeit (mehrere = Summe). <button type="button" class="sp-linkbtn" id="spTimesOpenAuto">⏱ Zeiten je Tätigkeit anpassen</button></div>
     <label class="sp-work" style="margin-top:12px;display:flex"><input type="checkbox" id="spAutoBreak"><span>30 Minuten Pause berücksichtigen<br><small class="sp-muted" style="font-weight:600">Pause 12:30–13:00 Uhr – in dieser Zeit werden keine Termine vergeben (bei 15-Minuten-Terminen sind es zwischen 12 und 13 Uhr dann nur 2 statt 4).</small></span></label>
     <div class="sp-route-box">
+      <label class="sp-work" style="display:flex;margin-bottom:8px"><input type="checkbox" id="spAutoPool"><span>Termine in den Druckpool legen<br><small class="sp-muted" style="font-weight:600">Aus lassen = die Termine werden nur gespeichert, ohne Zettel.</small></span></label>
       <label class="sp-work" style="display:flex;margin-bottom:8px"><input type="checkbox" id="spAutoWish"><span>Wunschzeiten der Kunden beachten<br><small class="sp-muted" style="font-weight:600">Kunden mit Wunschzeiten (z. B. „Fr ab 14:00 Uhr“) werden nur in diesen Zeitfenstern eingeplant. Sie werden zuerst eingeplant, die übrigen Kunden füllen die Lücken.</small></span></label>
       <label class="sp-work" style="display:flex"><input type="checkbox" id="spAutoRoute"><span>Kürzeste Fahrroute berücksichtigen<br><small class="sp-muted" style="font-weight:600">Die Kunden werden nach ihrem Standort so geordnet, dass möglichst wenig gefahren wird. Kunden ohne Standort werden nach Ort und Straße einsortiert.</small></span></label>
       <label class="sp-work" style="display:flex;margin-top:8px"><input type="checkbox" id="spAutoDrive"><span>Fahrtzeit zwischen den Kunden aus der Entfernung berechnen<br><small class="sp-muted" style="font-weight:600">Wird als „Fahrtzeit vorher“ eingeplant (Luftlinie × 1,3, auf 5 Minuten aufgerundet). Eine größere eingetragene Fahrtzeit gilt weiterhin.</small></span></label>
@@ -3713,6 +3869,70 @@
   </div>
 </div>
 
+<div class="sp-modal-backdrop" id="spPoolModal" hidden>
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spPoolTitle">
+    <h3 id="spPoolTitle">🗂 Druckpool</h3>
+    <p class="sp-muted" style="margin:0 0 10px">Hier sammeln sich die Anmeldezettel, die noch gedruckt werden müssen (neue und verschobene Termine). Gedruckt wird mit 2 Zetteln pro A4-Seite – so bleibt keine halbe Seite leer.</p>
+    <div id="spPoolInfo" style="font-weight:700;margin-bottom:6px"></div>
+    <div id="spPoolList"></div>
+    <div class="sp-works-box" style="margin-top:12px">
+      <div class="sp-works-title">Weitere Termine hinzufügen</div>
+      <div class="sp-form-grid">
+        <div class="field"><label for="spPoolFrom">Von</label><input id="spPoolFrom" type="date"></div>
+        <div class="field"><label for="spPoolTo">Bis</label><input id="spPoolTo" type="date"></div>
+      </div>
+      <div class="sp-btnrow" style="margin-top:8px"><button class="btn btn-light" type="button" id="spPoolAddRange">＋ Alle Termine im Zeitraum hinzufügen</button></div>
+    </div>
+    <label class="sp-work" style="display:flex;margin-top:12px"><input type="checkbox" id="spPoolAuto"><span>Automatisch eingeplante und verschobene Termine automatisch in den Druckpool legen <small class="sp-muted">(Termine von WhatsApp-Kunden kommen stattdessen in den WhatsApp-Pool)</small></span></label>
+    <div id="spPoolLast" style="margin-top:10px"></div>
+    <div class="sp-modal-actions">
+      <button class="btn btn-light" type="button" id="spPoolClose">Schließen</button>
+      <button class="btn btn-danger" type="button" id="spPoolClear">Pool leeren</button>
+      <button class="btn btn-primary" type="button" id="spPoolPrint">🖨 Druckpool drucken</button>
+    </div>
+  </div>
+</div>
+
+<div class="sp-modal-backdrop" id="spWaModal" hidden>
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spWaTitle">
+    <h3 id="spWaTitle">💬 WhatsApp-Pool</h3>
+    <p class="sp-muted" style="margin:0 0 10px">Hier sammeln sich die Anmeldungen von Kunden, die per WhatsApp angemeldet werden möchten (neue und verschobene Termine). Statt Zettel wird die Nachricht in WhatsApp geöffnet – du sendest sie selbst ab.</p>
+    <div id="spWaInfo" style="font-weight:700;margin-bottom:6px"></div>
+    <div id="spWaList"></div>
+    <div class="sp-modal-actions">
+      <button class="btn btn-light" type="button" id="spWaClose">Schließen</button>
+      <button class="btn btn-primary" type="button" id="spWaStart">📲 Der Reihe nach ansagen</button>
+    </div>
+  </div>
+</div>
+
+<div class="sp-modal-backdrop" id="spMsgModal" hidden>
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spMsgTitle">
+    <h3 id="spMsgTitle">📲 Termin ansagen</h3>
+    <div class="sp-msg-nav"><button type="button" class="btn btn-light" id="spMsgPrev" style="min-height:38px;padding:4px 12px;white-space:nowrap">‹ Zurück</button><span id="spMsgPos"></span><button type="button" class="btn btn-light" id="spMsgNext" style="min-height:38px;padding:4px 12px;white-space:nowrap">Weiter ›</button></div>
+    <div class="sp-msg-who" id="spMsgWho"></div>
+    <div class="field"><label for="spMsgPhone">Handynummer / E-Mail des Kunden</label><input id="spMsgPhone" type="text" inputmode="tel" autocomplete="off" placeholder="z. B. 0171 1234567"></div>
+    <label class="sp-work" id="spMsgSaveWrap" style="margin-top:8px" hidden><input type="checkbox" id="spMsgSavePhone"><span>Nummer beim Kunden speichern</span></label>
+    <div class="field" style="margin-top:10px"><label for="spMsgText">Nachricht (du kannst sie vor dem Senden ändern)</label><textarea id="spMsgText" rows="8"></textarea></div>
+    <div class="sp-btnrow">
+      <button class="btn btn-gold" type="button" id="spMsgWa">💬 WhatsApp öffnen</button>
+      <button class="btn btn-primary" type="button" id="spMsgSms">✉ SMS öffnen</button>
+      <button class="btn btn-light" type="button" id="spMsgMail" hidden>📧 E-Mail öffnen</button>
+      <button class="btn btn-light" type="button" id="spMsgCopy">📋 Text kopieren</button>
+    </div>
+    <div class="sp-msg-state" id="spMsgState"></div>
+    <details class="sp-fields" id="spMsgTplBox">
+      <summary>Vorlage ändern <small>gilt für alle Nachrichten</small></summary>
+      <div class="sp-fields-body">
+        <p class="sp-muted" style="margin:10px 0 6px;font-size:.82rem">Platzhalter: {Datum} {Uhrzeit} {Zeitfenster} {Arbeiten} {Adresse} {Name} {Mitarbeiter} {Betrieb} {Absender} {Telefon} {Zusatz} {Anmeldung} {Objekte} (bei mehreren Häusern). Zeilen, in denen ein Platzhalter leer bleibt (z. B. keine Telefonnummer eingetragen), werden weggelassen.</p>
+        <textarea id="spMsgTpl" rows="8" style="font-size:16px"></textarea>
+        <div class="sp-btnrow"><button class="btn btn-light" type="button" id="spMsgTplSave">Vorlage speichern</button><button class="btn btn-light" type="button" id="spMsgTplReset">Standard-Vorlage</button></div>
+      </div>
+    </details>
+    <div class="sp-modal-actions"><button class="btn btn-light" type="button" id="spMsgClose">Schließen</button></div>
+  </div>
+</div>
+
 <div class="sp-modal-backdrop" id="spAppointmentModal" hidden>
   <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="spModalTitle">
     <h3 id="spModalTitle">Termin anlegen</h3>
@@ -3724,14 +3944,12 @@
     <div class="sp-form-grid">
       <div class="field"><label for="spAptDate">Datum</label><input id="spAptDate" type="date"></div>
       <div class="field"><label for="spAptTime">Uhrzeit</label><input id="spAptTime" type="time" step="60"></div>
-      <div class="field"><label for="spAptCustomer">Kunde</label><input id="spAptCustomer" type="text" placeholder="Vor- und Nachname"></div>
-      <div class="field"><label for="spAptStreet">Straße</label><input id="spAptStreet" type="text" placeholder="Straße"></div>
+      <div class="field sp-full"><label for="spAptCustomer">Kunde</label><input id="spAptCustomer" type="text" placeholder="Vor- und Nachname"></div>
+      <div class="field sp-full"><label for="spAptStreet">Straße</label><input id="spAptStreet" type="text" placeholder="Straße"></div>
       <div class="field"><label for="spAptHouse">Hausnummer</label><input id="spAptHouse" type="text" placeholder="Hausnummer"></div>
       <div class="field"><label for="spAptZip">PLZ</label><input id="spAptZip" type="text" inputmode="numeric" placeholder="PLZ"></div>
       <div class="field"><label for="spAptCity">Ort</label><input id="spAptCity" type="text" placeholder="Ort"></div>
       <div class="field"><label for="spAptDuration">Dauer</label><select id="spAptDuration"><option value="10">10 Minuten</option><option value="15">15 Minuten</option><option value="20">20 Minuten</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></div>
-      <div class="field"><label for="spAptTravelB">Fahrtzeit vorher (Min.)</label><input id="spAptTravelB" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>
-      <div class="field"><label for="spAptTravelA">Fahrtzeit nachher (Min.)</label><input id="spAptTravelA" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>
     </div>
     <div class="sp-works-box">
       <div class="sp-works-title">Arbeiten (werden im Terminvorschlag angekreuzt)</div>
@@ -3746,16 +3964,43 @@
       <div class="sp-muted" style="margin-top:8px;font-size:.82rem">Die Dauer des Termins wird aus den Zeiten je Tätigkeit berechnet (mehrere Tätigkeiten = Summe). <button type="button" class="sp-linkbtn" id="spTimesFromApt">⏱ Zeiten anpassen</button></div>
       <div class="field" id="spWorkOtherWrap" hidden style="margin-top:8px"><input id="spWorkOtherText" type="text" maxlength="40" placeholder="Eigener Text, z. B. Feuerstättenschau" aria-label="Sonstige Arbeit"></div>
     </div>
-    <div class="field" style="margin-top:10px"><label for="spAptNotes">Besonderheiten</label><textarea id="spAptNotes" rows="4" placeholder="Zugang, Besonderheiten, Hinweise …"></textarea></div>
-    <div class="field" style="margin-top:10px"><label for="spAptBossNote">Bemerkung für den Chef (erscheint nur im Chef-Ausdruck)</label><textarea id="spAptBossNote" rows="2" placeholder="z. B. Zusatzarbeit nötig, Mangel festgestellt …"></textarea></div>
+    <div class="sp-hintbox">
+      <div class="field"><label for="spAptHint">💡 Hinweis für unterwegs <span class="sp-muted" style="font-weight:600">(nur für dich – nie auf dem Zettel)</span></label>
+      <div id="spAptHintCust" class="sp-hint-cust" hidden></div>
+      <textarea id="spAptHint" rows="2" placeholder="Nur für diesen Termin, z. B. Schlüssel liegt unter der Matte, bitte hinten klingeln …"></textarea></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label for="spAptNotes">Besonderheiten <span class="sp-muted" style="font-weight:600">(erscheinen als „Hinweis“ auf dem Zettel für den Kunden)</span></label><textarea id="spAptNotes" rows="2" placeholder="Nur Dinge, die der Kunde auf dem Zettel lesen soll"></textarea></div>
+    <details class="sp-fields" id="spAptMoreFields">
+      <summary>Weitere Angaben <small>Fahrtzeit · Wunschzeit des Kunden · Bemerkung für den Chef</small></summary>
+      <div class="sp-fields-body">
+        <div class="sp-form-grid" style="margin-top:12px">
+          <div class="field"><label for="spAptTravelB">Fahrtzeit vorher (Min.)</label><input id="spAptTravelB" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label for="spAptTravelA">Fahrtzeit nachher (Min.)</label><input id="spAptTravelA" type="number" min="0" max="240" step="5" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="sp-wishapt">
+      <div class="sp-works-title">⏰ Kunde möchte nur zu bestimmter Zeit (nur für diesen Termin)</div>
+      <div class="sp-form-grid">
+        <div class="field"><label for="spAptWishFrom">Frühestens ab (Uhr)</label><input id="spAptWishFrom" type="time" step="60"></div>
+        <div class="field"><label for="spAptWishTo">Spätestens fertig bis (Uhr)</label><input id="spAptWishTo" type="time" step="60"></div>
+      </div>
+      <div id="spAptWishAptInfo" hidden style="margin-top:8px;font-size:.84rem;font-weight:700"></div>
+    </div>
+        <div class="field" style="margin-top:12px"><label for="spAptBossNote">Bemerkung für den Chef (erscheint nur im Chef-Ausdruck)</label><textarea id="spAptBossNote" rows="2" placeholder="z. B. Zusatzarbeit nötig, Mangel festgestellt …"></textarea></div>
+      </div>
+    </details>
+    <div class="sp-modal-more" id="spAptMoreActions" hidden>
+      <button class="btn btn-light" type="button" id="spMoveFromApt">⇄ Verschieben</button>
+      <button class="btn btn-light" type="button" id="spDoneFromApt">✔ Erledigt …</button>
+      <button class="btn btn-light" type="button" id="spSweepFromApt">🧹 Kehr-Zettel</button>
+      <button class="btn btn-light" type="button" id="spMissFromApt">🚪 Nicht angetroffen …</button>
+      <button class="btn btn-light" type="button" id="spMsgFromApt">📲 Termin ansagen</button>
+    </div>
     <div class="sp-modal-actions">
       <button class="btn btn-light" type="button" id="spCancelAppointment">Abbrechen</button>
-      <button class="btn btn-light" type="button" id="spMoveFromApt" hidden>⇄ Verschieben</button>
-      <button class="btn btn-gold" type="button" id="spPrintFromApt">🖨 Speichern &amp; drucken</button>
-      <button class="btn btn-light" type="button" id="spDoneFromApt" hidden>✔ Erledigt …</button>
-      <button class="btn btn-light" type="button" id="spMissFromApt" hidden>🚪 Nicht angetroffen …</button>
       <button class="btn btn-danger" type="button" id="spDeleteAppointment" hidden>Löschen</button>
-      <button class="btn btn-primary" type="button" id="spSaveAppointment">Termin speichern</button>
+      <button class="btn btn-light" type="button" id="spPoolFromApt">🗂 Speichern &amp; in Druckpool</button>
+      <button class="btn btn-gold" type="button" id="spPrintFromApt">🖨 Speichern &amp; drucken</button>
+      <button class="btn btn-primary" type="button" id="spSaveAppointment" title="Speichert den Termin, ohne zu drucken und ohne ihn in den Druckpool zu legen">💾 Nur speichern</button>
     </div>
   </div>
 </div>
@@ -6922,6 +7167,7 @@
     document.querySelectorAll("[data-sp-view]").forEach(b => b.addEventListener("click", () => { moduleState.view = b.dataset.spView; render(); }));
     $("spAptPickCustomer").addEventListener("click", pickCustomerForAppointment);
     ["spAptDate", "spAptTime", "spAptDuration"].forEach(id => $(id).addEventListener("change", updateWishHint));
+    ["spAptTime", "spAptDuration", "spAptWishFrom", "spAptWishTo"].forEach(id => { $(id).addEventListener("change", updateAptWishInfo); $(id).addEventListener("input", updateAptWishInfo); });
     $("spDoneCancel").addEventListener("click", closeDoneModal);
     $("spDoneUndo").addEventListener("click", unsetDone);
     $("spDoneNoteSave").addEventListener("click", saveBossNoteOnly);
@@ -6946,7 +7192,23 @@
     document.querySelectorAll("[data-mv]").forEach(b => b.addEventListener("click", () => moveQuick(b.dataset.mv)));
     $("spMoveFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openMoveModal(id); });
     $("spPrintFromApt").addEventListener("click", () => saveAppointment({ print: true }));
+    $("spPoolFromApt").addEventListener("click", () => saveAppointment({ pool: true }));
+    $("spPoolOpen").addEventListener("click", openPoolModal);
+    $("spPoolClose").addEventListener("click", closePoolModal);
+    $("spPoolPrint").addEventListener("click", () => poolPrint());
+    $("spPoolClear").addEventListener("click", () => { if (confirm("Alle Termine aus dem Druckpool nehmen? Die Termine selbst bleiben erhalten.")) { persist({ printPool: [], sweepPool: [] }); renderPool(); render(); } });
+    $("spPoolAddRange").addEventListener("click", poolAddRange);
+    bindMsg();
+    bindPrintTabs();
+    $("spPoolAuto").addEventListener("change", e => persist({ printPoolAuto: e.target.checked }));
     $("spDoneFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openDoneModal(id); });
+    $("spSweepFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openSweepModal(id); });
+    $("spSweepFromDone").addEventListener("click", () => { const id = moduleState.doneId; closeDoneModal(); openSweepModal(id); });
+    $("spSweepCancel").addEventListener("click", closeSweepModal);
+    $("spSweepPrint").addEventListener("click", () => printSweep(false));
+    $("spSweepPool").addEventListener("click", () => printSweep(true));
+    $("spSweepNow").addEventListener("click", () => { const n = new Date(); document.querySelectorAll("#spSweepRows .sp-sweep-time").forEach(i => { i.value = pad(n.getHours()) + ":" + pad(n.getMinutes()); }); $("spSweepDate").value = iso(n); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("spSweepModal").hidden) closeSweepModal(); });
     $("spPrintDone").addEventListener("click", () => printDone(false));
     $("spPrintDoneRange").addEventListener("click", () => printDone(true));
     $("spMailDone").addEventListener("click", () => mailDone(false));
@@ -6955,6 +7217,13 @@
     $("spPrintDays").addEventListener("click", printDayRange);
     $("spDayDate").addEventListener("change", () => { moduleState.dayManual = true; renderExpenses(); });
     $("spExpAdd").addEventListener("click", openExpModal);
+    $("spCashOpen").addEventListener("click", openCashModal);
+    $("spCashClose").addEventListener("click", closeCashModal);
+    $("spCashHand").addEventListener("click", saveHandover);
+    $("spCashStart").addEventListener("change", () => { persist({ cashStart: $("spCashStart").value || "" }); renderCash(); render(); });
+    $("spHandAmount").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveHandover(); } });
+    $("spCashModal").addEventListener("click", e => { if (e.target === $("spCashModal")) closeCashModal(); const d = e.target.closest("[data-sp-cash-del]"); if (d) deleteHandover(d.dataset.spCashDel); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("spCashModal").hidden) closeCashModal(); });
     $("spExpCancel").addEventListener("click", closeExpModal);
     $("spExpSave").addEventListener("click", saveExp);
     $("spExpAmount").addEventListener("keydown", e => { if (e.key === "Enter") saveExp(); });
@@ -6965,7 +7234,7 @@
     $("spAutoUndo").addEventListener("click", undoAuto);
     $("spAutoPick").addEventListener("click", () => {
       if (!window.SPKunden) return alert("Die Kundenverwaltung ist nicht geladen. Bitte die Seite neu laden.");
-      window.SPKunden.pickMany(list => { autoState.kunden = list; updateAuto(); }, autoState.kunden.map(k => k.id), { types: AUTO_TYPES, getWork: autoWork, travel: true });
+      window.SPKunden.pickMany(list => { autoState.kunden = expandGroups(list); updateAuto(); }, autoState.kunden.map(k => k.id), { types: AUTO_TYPES, getWork: autoWork, travel: true });
     });
     ["spAutoFrom", "spAutoTo", "spAutoStart", "spAutoEnd", "spAutoDuration", "spAutoBreak"].forEach(id => $(id).addEventListener("change", updateAuto));
     $("spAutoMax").addEventListener("input", updateAuto);
@@ -6985,7 +7254,7 @@
     $("spTimesSave").addEventListener("click", saveTimes);
     $("spTimesReset").addEventListener("click", () => { Object.keys(WORK_DEFAULT_MIN).forEach(k => { $("spTime_" + k).value = WORK_DEFAULT_MIN[k]; }); });
     $("spWorkOther").addEventListener("change", () => { syncWorkOther(); if ($("spWorkOther").checked) $("spWorkOtherText").focus(); });
-    $("spSaveAppointment").addEventListener("click", saveAppointment);
+    $("spSaveAppointment").addEventListener("click", () => saveAppointment({ plain: true }));
     $("spCancelAppointment").addEventListener("click", closeModal);
     $("spDeleteAppointment").addEventListener("click", deleteAppointment);
     $("spPrintProposal").addEventListener("click", printProposal);
@@ -6996,14 +7265,19 @@
     ["spProposalFrom","spProposalTo"].forEach(id => $(id).addEventListener("change", renderProposalList));
     $("year").addEventListener("change", () => render());
     $("state").addEventListener("change", () => render());
-    document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("spAppointmentModal").hidden) closeModal(); if (e.key === "Escape" && !$("spAutoModal").hidden && !document.querySelector(".kv-overlay")) closeAutoModal(); if (e.key === "Escape" && !$("spDoneModal").hidden) closeDoneModal(); if (e.key === "Escape" && !$("spMoveModal").hidden) closeMoveModal(); if (e.key === "Escape" && !$("spMissModal").hidden) closeMissModal(); if (e.key === "Escape" && !$("spExpModal").hidden) closeExpModal(); if (e.key === "Escape" && !$("spReceiptModal").hidden) closeReceiptModal(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("spAppointmentModal").hidden) closeModal(); if (e.key === "Escape" && !$("spAutoModal").hidden && !document.querySelector(".kv-overlay")) closeAutoModal(); if (e.key === "Escape" && !$("spDoneModal").hidden) closeDoneModal(); if (e.key === "Escape" && !$("spMoveModal").hidden) closeMoveModal(); if (e.key === "Escape" && !$("spMissModal").hidden) closeMissModal(); if (e.key === "Escape" && !$("spExpModal").hidden) closeExpModal(); if (e.key === "Escape" && !$("spReceiptModal").hidden) closeReceiptModal(); if (e.key === "Escape" && !$("spPoolModal").hidden) closePoolModal(); if (e.key === "Escape" && !$("spMsgModal").hidden) closeMsgModal(); else if (e.key === "Escape" && !$("spWaModal").hidden) closeWaModal(); });
     document.addEventListener("click", e => {
       const dayBtn = e.target.closest("[data-sp-day]"); if (dayBtn) { moduleState.date = fromIso(dayBtn.dataset.spDay); moduleState.view = "day"; render(); return; }
+      const sw = e.target.closest("[data-sp-sweep]"); if (sw) { openSweepModal(sw.dataset.spSweep); return; }
       const dn = e.target.closest("[data-sp-done]"); if (dn) { openDoneModal(dn.dataset.spDone); return; }
       const xd = e.target.closest("[data-sp-exp-del]"); if (xd) { deleteExp(xd.dataset.spExpDel); return; }
       const ms = e.target.closest("[data-sp-miss]"); if (ms) { openMissModal(ms.dataset.spMiss); return; }
       const mv = e.target.closest("[data-sp-move]"); if (mv) { openMoveModal(mv.dataset.spMove); return; }
       const pr = e.target.closest("[data-sp-print]"); if (pr) { printAppointmentNow(pr.dataset.spPrint); return; }
+      const mg = e.target.closest("[data-sp-msg]"); if (mg) { openMsgModal(mg.dataset.spMsg); return; }
+      const pl = e.target.closest("[data-sp-pool]"); if (pl) { const id = pl.dataset.spPool; if (inPool(id)) poolRemove([id]); else poolAdd([id], true); render(); return; }
+      const sd = e.target.closest("[data-sp-sweep-del]"); if (sd) { persist({ sweepPool: sweepPoolList().filter(x => x.id !== sd.dataset.spSweepDel) }); renderPool(); render(); return; }
+      const pd = e.target.closest("[data-sp-pool-del]"); if (pd) { poolRemove([pd.dataset.spPoolDel]); renderPool(); render(); return; }
       const open = e.target.closest("[data-sp-open]"); if (open) openModal(open.dataset.date, open.dataset.time, open.dataset.spOpen);
       const select = e.target.closest("[data-sp-select]"); if (select) { moduleState.selectedId = select.dataset.spSelect; renderProposalList(); updateActionState(); }
       const edit = e.target.closest("[data-sp-edit]"); if (edit) openModal("", "", edit.dataset.spEdit);
@@ -7045,6 +7319,30 @@
   const clampTravel = v => Math.max(0, Math.min(240, Math.round(Number(v) || 0)));
   const attemptOf = a => (Number(a.attempt) > 1 ? Number(a.attempt) : 1);
   const attemptLabel = n => (n === 3 ? "3. und letzte Anmeldung" : `${n}. Anmeldung`);
+  /* ===== Zusammengehörige Häuser (Kunden-Gruppe): am selben Tag, eine gemeinsame Anmeldung ===== */
+  const grpOf = a => { const k = a && a.kid && window.SPKunden ? window.SPKunden.get(a.kid) : null; return k && k.group ? String(k.group).trim().toLowerCase() : ""; };
+  /* Alle Termine, die zusammen angemeldet werden: gleicher Tag, gleiche Gruppe, gleiche Anmeldung (1./2./3.); sonst nur der Termin selbst */
+  function slipUnit(a) {
+    const g = a && !a.missed ? grpOf(a) : "";
+    if (!g) return [a];
+    const att = attemptOf(a);
+    const u = appointments().filter(x => !x.missed && x.date === a.date && grpOf(x) === g && attemptOf(x) === att).sort((x, y) => x.time.localeCompare(y.time) || String(x.id).localeCompare(String(y.id)));
+    return u.some(x => x.id === a.id) ? u : [a];
+  }
+  const slipLead = a => slipUnit(a)[0];
+  /* Liste auf je eine Anmeldung (Wortführer je Gruppe) verkürzen */
+  function leadsOf(list) {
+    const seen = new Set(), out = [];
+    list.forEach(a => { const l = slipLead(a); if (!seen.has(l.id)) { seen.add(l.id); out.push(l); } });
+    return out;
+  }
+  /* Zeitfenster der ganzen Gruppe in vollen Stunden: [von, bis] */
+  function unitHours(u) {
+    const h1 = Number(String(u[0].time).slice(0, 2));
+    let endMinMax = 0; u.forEach(x => { endMinMax = Math.max(endMinMax, toMin(x.time) + (Number(x.duration) || 15)); });
+    const h2 = Math.max(Number(String(u[u.length - 1].time).slice(0, 2)) + 1, Math.ceil(endMinMax / 60));
+    return [h1, h2];
+  }
   const followUpOf = a => appointments().find(x => x.prevId === a.id) || null;
   const fmtEUR = n => Number(n).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
   /* „85,50“, „85.5“, „1.234,50“ -> Zahl (oder null) */
@@ -7056,21 +7354,29 @@
   }
   function apptCard(a, compact) {
     const addr = addrLine(a);
+    const hl = aptHintText(a), ann = annState(a), waOpen = isWa(a) && !a.done && !a.missed && ann !== "ok";
     const att = attemptOf(a);
-    const title = (a.customer || "Ohne Kundennamen") + (addr ? " – " + addr : "") + (att > 1 ? ` (${attemptLabel(att)})` : "") + (a.missed ? " – nicht angetroffen" : "") + (slipStale(a) ? " – Anmeldezettel neu drucken" : "");
+    const title = (a.customer || "Ohne Kundennamen") + (addr ? " – " + addr : "") + (att > 1 ? ` (${attemptLabel(att)})` : "") + (a.missed ? " – nicht angetroffen" : "") + (slipStale(a) ? " – Anmeldezettel neu drucken" : "") + (aptWishText(a) ? " – Kunde möchte " + aptWishText(a) : "") + (hl ? " – Hinweis: " + hl : "");
     const badgeTime = att > 1 && compact ? ` <span class="sp-badge">${att}.</span>` : "";
     const stale = slipStale(a);
     const tbm = clampTravel(a.travelBefore), tam = clampTravel(a.travelAfter);
     const code = workCode(a);
     const codeHtml = code ? `<span class="sp-code" title="${esc(worksText(a).join(", "))}">${esc(code)}</span>` : "";
-    const badgeLine = (att > 1 && !compact ? `<span class="sp-badge sp-badge-line">${attemptLabel(att)}</span>` : "") + (stale && !compact ? `<span class="sp-badge sp-badge-line sp-badge-warn">⚠ Zettel neu drucken</span>` : "");
-    const mark = (a.done ? "✔ " : a.missed ? "🚪 " : "") + (stale && compact ? "⚠ " : "") + ((tbm || tam) && compact ? "🚗 " : "");
-    const btn = `<button type="button" class="sp-appt${compact ? " compact" : ""}${a.id === moduleState.selectedId ? " selected" : ""}${a.done ? " done" : ""}${a.missed ? " missed" : ""}" data-sp-open="${esc(a.id)}" data-date="${esc(a.date)}" data-time="${esc(a.time)}" title="${esc(title)}"><span class="sp-appt-time">${mark}${esc(a.time)}${badgeTime}${compact ? codeHtml : ""}</span>${compact ? "" : codeHtml}<span class="sp-appt-main"><strong>${esc(a.customer || "Ohne Kundennamen")}</strong>${badgeLine}${compact || !addr ? "" : `<small>${esc(addr)}</small>`}${compact || !(tbm || tam) ? "" : `<small>🚗 ${tbm} Min. vorher · ${tam} Min. nachher</small>`}</span></button>`;
+    const wt = aptWishText(a), wbad = wt && !aptWishOk(a, a.time, a.duration);
+    const wishBadge = wt && !compact ? `<span class="sp-badge sp-badge-line sp-badge-time${wbad ? " bad" : ""}">⏰ Kunde: ${esc(wt)}${wbad ? " – Uhrzeit prüfen!" : ""}</span>` : "";
+    const pooled = inPool(a.id);
+    const grpN = slipUnit(a).length;
+    const grpBadge = grpN > 1 && !compact ? `<span class="sp-badge sp-badge-line sp-badge-time">🏘 ${grpN} Häuser zusammen</span>` : "";
+    const sweepQ = sweepPoolList().find(e => e.id === a.id);
+    const sweepBadge = sweepQ ? `<span class="sp-badge sp-badge-line">🧹 Kehr-Zettel im Druckpool ${esc(sweepQ.time || "")}</span>` : a.sweepSlip ? `<span class="sp-badge sp-badge-line">🧹 Kehr-Zettel ${esc(a.sweepSlip.time || "")}</span>` : "";
+    const badgeLine = wishBadge + grpBadge + sweepBadge + (pooled && !compact ? `<span class="sp-badge sp-badge-line sp-badge-time">🗂 im Druckpool</span>` : "") + (waOpen && !compact ? `<span class="sp-badge sp-badge-line sp-badge-time">💬 per WhatsApp anmelden</span>` : "") + (ann === "ok" && !compact ? `<span class="sp-badge sp-badge-line sp-badge-ann">📲 angesagt</span>` : ann === "stale" && !compact ? `<span class="sp-badge sp-badge-line sp-badge-ann stale">📲 neu ansagen – Termin geändert</span>` : "") + (att > 1 && !compact ? `<span class="sp-badge sp-badge-line">${attemptLabel(att)}</span>` : "") + (stale && !compact ? `<span class="sp-badge sp-badge-line sp-badge-warn">⚠ Zettel neu drucken</span>` : "");
+    const mark = (a.done ? "✔ " : a.missed ? "🚪 " : "") + (grpN > 1 && compact ? "🏘 " : "") + (pooled && compact ? "🗂 " : "") + (waOpen && compact ? "💬 " : "") + (hl && compact ? "💡 " : "") + (stale && compact ? "⚠ " : "") + ((tbm || tam) && compact ? "🚗 " : "") + (wt && compact ? (wbad ? "⚠⏰ " : "⏰ ") : "");
+    const btn = `<button type="button" class="sp-appt${compact ? " compact" : ""}${a.id === moduleState.selectedId ? " selected" : ""}${a.done ? " done" : ""}${a.missed ? " missed" : ""}" data-sp-open="${esc(a.id)}" data-date="${esc(a.date)}" data-time="${esc(a.time)}" title="${esc(title)}"><span class="sp-appt-time">${mark}${esc(a.time)}${badgeTime}${compact ? codeHtml : ""}</span>${compact ? "" : codeHtml}<span class="sp-appt-main"><strong>${esc(a.customer || "Ohne Kundennamen")}</strong>${badgeLine}${compact || !addr ? "" : `<small>${esc(addr)}</small>`}${hl && !compact ? `<span class="sp-hintline">💡 ${esc(hl)}</span>` : ""}${compact || !(tbm || tam) ? "" : `<small>🚗 ${tbm} Min. vorher · ${tam} Min. nachher</small>`}</span></button>`;
     if (compact) return btn;
     const inv = a.done && a.invoice ? ` · ${INV_SHORT[a.invoice] || ""}${a.invoice === "bar" && a.amount > 0 ? " " + fmtEUR(a.amount) : ""}` : "";
     const fu = a.missed ? followUpOf(a) : null;
     const missLabel = a.missed ? (fu ? `🚪 Nicht angetroffen · ${esc(attemptLabel(attemptOf(fu)))} am ${esc(shortDate(fu.date))}` : (attemptOf(a) >= 3 ? "🚪 Nicht angetroffen – letzte Anmeldung" : "🚪 Nicht angetroffen – neu anmelden")) : "🚪 Nicht angetroffen";
-    return `<div class="sp-appt-wrap">${btn}<div class="sp-appt-actions"><button type="button" class="sp-act${a.done ? " done" : ""}" data-sp-done="${esc(a.id)}">${a.done ? "✔ Erledigt" + esc(inv) : "☐ Erledigt?"}</button><button type="button" class="sp-act" data-sp-print="${esc(a.id)}">🖨 Drucken</button><details class="sp-more"><summary class="sp-act${a.missed ? " missed" : ""}">${a.missed ? "🚪 " : ""}⋯ Mehr</summary><div class="sp-more-menu"><button type="button" class="sp-act${a.missed ? " missed" : ""}" data-sp-miss="${esc(a.id)}">${missLabel}</button><button type="button" class="sp-act" data-sp-move="${esc(a.id)}">⇄ Verschieben</button></div></details></div></div>`;
+    return `<div class="sp-appt-wrap">${btn}<div class="sp-appt-actions"><button type="button" class="sp-act${a.done ? " done" : ""}" data-sp-done="${esc(a.id)}">${a.done ? "✔ Erledigt" + esc(inv) : "☐ Erledigt?"}</button><button type="button" class="sp-act" data-sp-print="${esc(a.id)}">🖨 Drucken</button><details class="sp-more"><summary class="sp-act${a.missed ? " missed" : ""}">${a.missed ? "🚪 " : ""}⋯ Mehr</summary><div class="sp-more-menu"><button type="button" class="sp-act" data-sp-sweep="${esc(a.id)}">🧹 Kehr-Zettel</button><button type="button" class="sp-act" data-sp-msg="${esc(a.id)}">📲 Termin ansagen</button><button type="button" class="sp-act" data-sp-pool="${esc(a.id)}">🗂 ${pooled ? "Aus Druckpool nehmen" : "In Druckpool legen"}</button><button type="button" class="sp-act${a.missed ? " missed" : ""}" data-sp-miss="${esc(a.id)}">${missLabel}</button><button type="button" class="sp-act" data-sp-move="${esc(a.id)}">⇄ Verschieben</button></div></details></div></div>`;
   }
   function freeTimeIn(day, hour) {
     const used = appointments().filter(a => a.date === day && Number(a.time.slice(0, 2)) === hour).map(a => a.time);
@@ -7125,7 +7431,7 @@
   const foldA = t => String(t || "").toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
   const foldB = t => String(t || "").toLowerCase().replace(/ß/g, "ss").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   function searchHay(a) {
-    const raw = [a.customer, a.street, a.house, [a.street, a.house].filter(Boolean).join(" "), a.zip, a.city, [a.zip, a.city].filter(Boolean).join(" "), a.knr, a.notes, a.bossNote, a.date && shortDate(a.date)].filter(Boolean).join(" | ");
+    const raw = [a.customer, a.street, a.house, [a.street, a.house].filter(Boolean).join(" "), a.zip, a.city, [a.zip, a.city].filter(Boolean).join(" "), a.knr, a.notes, aptHintText(a), a.bossNote, a.date && shortDate(a.date)].filter(Boolean).join(" | ");
     return foldA(raw) + " | " + foldB(raw);
   }
   function searchAppointments(q) {
@@ -7196,6 +7502,8 @@
   function render() {
     if (!$('spCalendar')) return;
     renderSearch();
+    updatePoolButton();
+    updateWaButton();
     renderReceipts();
     if ($("spDayDate") && !moduleState.dayManual) $("spDayDate").value = iso(moduleState.date);
     renderExpenses();
@@ -7213,6 +7521,9 @@
     const toggle = $("spToggleEmpty");
     if (toggle) { toggle.hidden = week; toggle.textContent = moduleState.showEmpty ? "Freie Stunden ausblenden" : "Freie Stunden zeigen"; }
     $("spCalendar").innerHTML = week ? renderWeek(days, holidayOf) : renderDay(days[0], holidayOf);
+    renderStats(days);
+    if (window.SPKunden && window.SPKunden.setAptProvider) { window.SPKunden.setAptProvider(openAptList); window.SPKunden.aptsChanged(); }
+    if ($("spCashModal") && !$("spCashModal").hidden) renderCash();
     { const hol = days.map(d => holidayOf(d) ? `${shortDate(iso(d))}: ${holidayOf(d)}` : "").filter(Boolean); showNotice(hol.length ? `Feiertag – an Feiertagen kann kein neuer Termin angelegt werden (${hol.join(", ")}).` : ""); }
     renderProposalList();
     updateActionState();
@@ -7233,8 +7544,11 @@
     $("spAptDuration").value = String(a?.duration || 15);
     $("spAptNotes").value = a?.notes || "";
     $("spAptBossNote").value = a?.bossNote || "";
+    $("spAptHint").value = a?.hint || "";
     $("spAptTravelB").value = a?.travelBefore || "";
     $("spAptTravelA").value = a?.travelAfter || "";
+    $("spAptWishFrom").value = a?.wishFrom || "";
+    $("spAptWishTo").value = a?.wishTo || "";
     const wk = Array.isArray(a?.works) ? a.works : [];
     $("spWorkKehrung").checked = wk.includes("kehrung");
     $("spWorkMessung").checked = wk.includes("messung");
@@ -7245,10 +7559,10 @@
     syncWorkOther();
     moduleState.aptCustomer = a?.kid ? { id: a.kid, nr: a.knr || "" } : null;
     showAptCustomerInfo();
+    updateAptWishInfo();
     $("spDeleteAppointment").hidden = !a;
-    $("spMoveFromApt").hidden = !a;
-    $("spDoneFromApt").hidden = !a;
-    $("spMissFromApt").hidden = !a;
+    $("spAptMoreActions").hidden = !a;
+    $("spAptMoreFields").open = !!(a && (a.travelBefore || a.travelAfter || a.wishFrom || a.wishTo || a.bossNote));
     $("spAppointmentModal").hidden = false;
     $("spAptCustomer").focus();
   }
@@ -7271,6 +7585,59 @@
   }
 
   /* Kundenverwaltung: Kunde wählen, Name und Adresse übernehmen */
+  /* Wunschzeit nur für diesen Termin („Kunde möchte ab 15:30 Uhr“) */
+  /* Hinweise für unterwegs: Hinweis des Kunden (immer aktuell) + Hinweis nur für diesen Termin.
+     Erscheinen im Kalender und in der Tagesübersicht – NIE auf dem Anmeldezettel. */
+  function aptHintLines(a) {
+    const out = [];
+    const add = t => String(t || "").split(/\n+/).map(x => x.trim()).filter(Boolean).forEach(x => { if (!out.includes(x)) out.push(x); });
+    const k = a && a.kid && window.SPKunden ? window.SPKunden.get(a.kid) : null;
+    if (k) add(k.hint);
+    if (a) add(a.hint);
+    return out;
+  }
+  const aptHintText = a => aptHintLines(a).join(" · ");
+  function updateAptHintInfo() {
+    const el = $("spAptHintCust"); if (!el) return;
+    const c = moduleState.aptCustomer && window.SPKunden ? window.SPKunden.get(moduleState.aptCustomer.id) : null;
+    const t = c && c.hint ? c.hint.split(/\n+/).map(x => x.trim()).filter(Boolean).join(" · ") : "";
+    el.hidden = !t; el.textContent = t ? "Vom Kunden: " + t : "";
+  }
+  function aptWishText(a) {
+    const f = a && a.wishFrom, t = a && a.wishTo;
+    if (f && t) return `${f}–${t} Uhr`;
+    if (f) return `ab ${f} Uhr`;
+    if (t) return `bis ${t} Uhr`;
+    return "";
+  }
+  function aptWishOk(a, time, dur) {
+    if (!a || !time) return true;
+    const s = toMin(time);
+    if (a.wishFrom && s < toMin(a.wishFrom)) return false;
+    if (a.wishTo && s + (Number(dur) || 15) > toMin(a.wishTo)) return false;
+    return true;
+  }
+  function formWish() { return { wishFrom: $("spAptWishFrom").value, wishTo: $("spAptWishTo").value }; }
+  function updateAptWishInfo() {
+    const el = $("spAptWishAptInfo");
+    if (!el) return;
+    const w = formWish();
+    if (!w.wishFrom && !w.wishTo) { el.hidden = true; el.textContent = ""; return; }
+    const time = $("spAptTime").value, dur = Number($("spAptDuration").value) || 15;
+    const ok = aptWishOk(w, time, dur);
+    el.hidden = false;
+    el.style.color = ok ? "#2e6f45" : "#a02f2f";
+    el.textContent = ok
+      ? `✓ Die Uhrzeit passt zum Wunsch des Kunden (${aptWishText(w)}).`
+      : `⚠ Der Kunde möchte ${aptWishText(w)} – diese Uhrzeit passt nicht.`;
+    if (!ok && w.wishFrom && time && toMin(time) < toMin(w.wishFrom)) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "sp-linkbtn"; b.style.marginLeft = "8px";
+      b.textContent = `→ Uhrzeit auf ${w.wishFrom} setzen`;
+      b.addEventListener("click", () => { $("spAptTime").value = w.wishFrom; updateAptWishInfo(); updateWishHint(); });
+      el.appendChild(b);
+    }
+  }
   /* Wunschzeit des gewählten Kunden prüfen */
   function wishOk(c, date, time, dur) {
     const wins = window.SPKunden.wishWindows(c, fromIso(date).getDay());
@@ -7293,7 +7660,9 @@
   function showAptCustomerInfo() {
     const el = $("spAptCustomerInfo"); if (!el) return;
     const c = moduleState.aptCustomer;
-    el.textContent = c && c.nr ? `Kd-Nr ${c.nr}` : "";
+    const kr = c && window.SPKunden ? window.SPKunden.get(c.id) : null;
+    el.textContent = (c && c.nr ? `Kd-Nr ${c.nr}` : "") + (kr && kr.waReg ? " · 💬 Anmeldung per WhatsApp (kein Zettel)" : "");
+    updateAptHintInfo();
     updateWishHint();
   }
   function pickCustomerForAppointment() {
@@ -7308,6 +7677,7 @@
       if (k.bossNote && !$("spAptBossNote").value.trim()) $("spAptBossNote").value = k.bossNote;
       if (k.travelBefore && !$("spAptTravelB").value) $("spAptTravelB").value = k.travelBefore;
       if (k.travelAfter && !$("spAptTravelA").value) $("spAptTravelA").value = k.travelAfter;
+      if (k.bossNote || k.travelBefore || k.travelAfter) $("spAptMoreFields").open = true;
       moduleState.aptCustomer = { id: k.id, nr: k.nr };
       showAptCustomerInfo();
     });
@@ -7354,13 +7724,28 @@
   /* ================= Termine automatisch einplanen ================= */
   const AUTO_KEY = "schornstein-planer-auto-v1";
   const BREAK_FROM = 12 * 60 + 30, BREAK_TO = 13 * 60;   // Pause 12:30–13:00 Uhr
-  const autoState = { kunden: [], works: {} };
+  const autoState = { kunden: [], works: {}, groupNote: "" };
   const toMin = t => { const [h, m] = String(t || "0:0").split(":").map(Number); return (h || 0) * 60 + (m || 0); };
   const fromMin = n => `${pad(Math.floor(n / 60))}:${pad(n % 60)}`;
   function autoPrefs() { try { return JSON.parse(localStorage.getItem(AUTO_KEY) || "{}"); } catch { return {}; } }
   function autoSavePrefs(extra) { try { localStorage.setItem(AUTO_KEY, JSON.stringify({ ...autoPrefs(), ...extra })); } catch {} }
 
   /* Tätigkeit je Kunde: { kehrung, messung, other, text } */
+  /* Kunden mit Gruppe: die anderen Häuser der Gruppe automatisch mit auswählen (gleiche Tätigkeiten wie das gewählte Haus) */
+  function expandGroups(list) {
+    const have = new Set(list.map(k => k.id)), out = list.slice();
+    let added = 0;
+    list.forEach(k => {
+      if (!k.group || !window.SPKunden || !window.SPKunden.groupMembers) return;
+      window.SPKunden.groupMembers(k.group).forEach(m => {
+        if (have.has(m.id)) return;
+        have.add(m.id); out.push(m); added++;
+        if (!autoState.works[m.id]) { const src = autoWork(k.id); autoState.works[m.id] = { ...src, tb: clampTravel(m.travelBefore), ta: clampTravel(m.travelAfter) }; }
+      });
+    });
+    autoState.groupNote = added ? (added === 1 ? "🏘 1 weiteres Haus derselben Gruppe wurde mit ausgewählt" : `🏘 ${added} weitere Häuser derselben Gruppe wurden mit ausgewählt`) + " – Häuser einer Gruppe kommen am selben Tag direkt hintereinander dran." : "";
+    return out;
+  }
   function autoWork(id) {
     if (autoState.works[id]) return autoState.works[id];
     const kr = window.SPKunden ? window.SPKunden.get(id) : null;
@@ -7427,6 +7812,7 @@
 
   function openAutoModal() {
     const p = autoPrefs();
+    $("spAutoPool").checked = poolAutoOn();
     const from = addDays(new Date(), 1);
     $("spAutoFrom").value = iso(from);
     $("spAutoTo").value = iso(addDays(from, 13));
@@ -7439,7 +7825,7 @@
     $("spAutoRoute").checked = p.route !== false;
     $("spAutoDrive").checked = p.drive !== false;
     $("spAutoSpeed").value = p.speed || 40;
-    autoState.kunden = [];
+    autoState.kunden = []; autoState.groupNote = "";
     autoState.works = {};
     $("spAutoModal").hidden = false;
     updateAuto();
@@ -7543,8 +7929,11 @@
     const seg = stops.slice(part * per, part * per + per);
     const enc = encodeURIComponent;
     let url = "https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=" + enc(seg[seg.length - 1]);
-    if (seg.length > 1) url += "&waypoints=" + seg.slice(0, -1).map(enc).join("%7C");
-    if (part > 0) url += "&origin=" + enc(stops[part * per - 1]);
+    /* Start = erster Termin des Tages (nicht der aktuelle Standort); weitere Teile beginnen am letzten Stopp davor */
+    const origin = part > 0 ? stops[part * per - 1] : seg[0];
+    const via = part > 0 ? seg.slice(0, -1) : seg.slice(1, -1);
+    if (stops.length > 1) url += "&origin=" + enc(origin);
+    if (via.length) url += "&waypoints=" + via.map(enc).join("%7C");
     moduleState.mapPart = part + 1;
     window.open(url, "_blank");
     if (parts > 1) alert(`Route Teil ${part + 1} von ${parts} geöffnet (${stops.length} Stopps, höchstens ${per} je Karte). Nochmal tippen für den nächsten Teil.`);
@@ -7620,7 +8009,9 @@
     const inPause = (o, total) => pause && o < BREAK_TO && o + total > BREAK_FROM;
 
     /* 1) Kunden mit Wunschzeiten zuerst in ihre Zeitfenster legen */
-    const wishers = useWish && window.SPKunden ? cand.filter(k => Array.isArray(k.wishes) && k.wishes.length) : [];
+    const gk = k => String(k.group || "").trim().toLowerCase();
+    const gCount = {}; cand.forEach(k => { if (gk(k)) gCount[gk(k)] = (gCount[gk(k)] || 0) + 1; });
+    const wishers = useWish && window.SPKunden ? cand.filter(k => Array.isArray(k.wishes) && k.wishes.length && !(gk(k) && gCount[gk(k)] > 1)) : [];   // Wunschzeiten gelten nicht für Häuser-Gruppen
     const queue = cand.filter(k => !wishers.includes(k));
     res.wishFailed = [];
     wishers.forEach(k => {
@@ -7647,26 +8038,41 @@
       if (!done) res.wishFailed.push(k);
     });
 
-    /* 2) Alle übrigen Kunden der Reihe nach (Route) in die verbleibenden Lücken */
-    let idx = 0, di = 0, o = startMin;
-    while (idx < queue.length && di < days.length) {
-      const k = queue[idx], d = durOf(k), ta = taOf(k), key = days[di], st = dayState(key);
-      if (maxDay && st.count >= maxDay) { di++; o = startMin; continue; }   // Tageslimit erreicht
-      let placed = false;
-      for (;;) {
-        const { km, tb } = driveFrom(key, o, k), total = tb + d + ta;
-        if (o + total > endMin) break;
-        if (inPause(o, total)) { o = BREAK_TO; continue; }   // Pause: danach weiter
-        const clash = st.busy.find(b => o < b.e && o + total > b.s);
-        if (clash) { o = clash.e; continue; }
-        putItem(key, st, k, o, total, d, tb, ta, km, false);
-        o += total; idx++; placed = true;
-        break;
+    /* 2) Alle übrigen Kunden der Reihe nach (Route) in die verbleibenden Lücken.
+          Häuser einer Gruppe bilden eine Einheit: sie werden gemeinsam, direkt hintereinander an einem Tag eingeplant. */
+    const units = [], gIdx = {};
+    queue.forEach(k => { const g = gk(k); if (!g) units.push([k]); else if (gIdx[g] != null) units[gIdx[g]].push(k); else { gIdx[g] = units.length; units.push([k]); } });
+    res.groups = units.filter(u => u.length > 1).length;
+    const placeSeq = (key, st, unit, o0) => {
+      const snap = { b: st.busy.length, c: st.count, di: (dayItems[key] || []).length, p: res.placed.length };
+      let o = o0;
+      for (const k of unit) {
+        const d = durOf(k), ta = taOf(k);
+        let ok = false;
+        for (;;) {
+          const { km, tb } = driveFrom(key, o, k), total = tb + d + ta;
+          if (o + total > endMin) break;
+          if (inPause(o, total)) { o = BREAK_TO; continue; }   // Pause: danach weiter
+          const clash = st.busy.find(b => o < b.e && o + total > b.s);
+          if (clash) { o = clash.e; continue; }
+          putItem(key, st, k, o, total, d, tb, ta, km, false);
+          o += total; ok = true;
+          break;
+        }
+        if (!ok) { st.busy.length = snap.b; st.count = snap.c; if (dayItems[key]) dayItems[key].length = snap.di; res.placed.length = snap.p; return -1; }   // passt nicht ganz auf den Tag: nichts davon setzen
       }
-      if (!placed) { di++; o = startMin; }
+      return o;
+    };
+    let idx = 0, di = 0, o = startMin;
+    while (idx < units.length && di < days.length) {
+      const unit = units[idx], key = days[di], st = dayState(key);
+      if (maxDay && (st.count >= maxDay || (unit.length > 1 && st.count > 0 && st.count + unit.length > maxDay))) { di++; o = startMin; continue; }   // Tageslimit erreicht
+      const r = placeSeq(key, st, unit, o);
+      if (r < 0) { di++; o = startMin; continue; }
+      o = r; idx++;
     }
     res.placed.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-    res.unplaced = queue.slice(idx);
+    res.unplaced = units.slice(idx).flat();
     return res;
   }
 
@@ -7692,6 +8098,8 @@
         html += `<div class="sp-route-sum">🧭 Für die Routenplanung fehlen Standorte (mindestens 2 Kunden mit Standort nötig). Es gilt die Reihenfolge nach Ort und Straße.</div>`;
       }
     }
+    if (autoState.groupNote) html += `<div class="sp-route-sum">${esc(autoState.groupNote)}</div>`;
+    else if (plan.groups) html += `<div class="sp-route-sum">🏘 ${plan.groups} ${plan.groups === 1 ? "Haus-Gruppe wird" : "Haus-Gruppen werden"} am selben Tag direkt hintereinander eingeplant (Wunschzeiten gelten dafür nicht).</div>`;
     if (plan.maxDay) html += `<span class="sp-muted"> · höchstens ${plan.maxDay} ${plan.maxDay === 1 ? "Termin" : "Termine"} pro Tag</span>`;
     if (plan.placed.length) {
       html += `<span class="sp-muted"> · ${shortDate(plan.placed[0].date)} bis ${shortDate(plan.placed[plan.placed.length - 1].date)}</span>`;
@@ -7700,7 +8108,7 @@
       let day = "";
       plan.placed.forEach(p => {
         if (p.date !== day) { day = p.date; html += `<div class="sp-auto-day">${esc(fmtDate(day))}</div>`; }
-        html += `<div class="sp-auto-line sp-auto-cust" data-kid="${esc(p.k.id)}"><span class="sp-auto-time">${esc(p.time)}</span><span class="sp-auto-who"><span>${esc(p.k.name)} – ${esc(addrLine(p.k))}<small class="sp-muted"> (${p.dur} Min.${p.tb || p.ta ? ` · 🚗 ${p.tb}/${p.ta}` : ""}${p.km ? ` · ${String(p.km).replace(".", ",")} km` : ""})</small>${p.retry ? `<span class="sp-badge">${attemptLabel(p.retry.attempt)}</span>` : ""}${p.wish ? `<span class="sp-badge sp-badge-wish">⏰ ${esc(window.SPKunden.wishText(p.k))}</span>` : ""}</span><span class="sp-auto-works">${chipsHtml(p.k.id)}</span></span></div>`;
+        html += `<div class="sp-auto-line sp-auto-cust" data-kid="${esc(p.k.id)}"><span class="sp-auto-time">${esc(p.time)}</span><span class="sp-auto-who"><span>${p.k.group ? "🏘 " : ""}${esc(p.k.name)} – ${esc(addrLine(p.k))}<small class="sp-muted"> (${p.dur} Min.${p.tb || p.ta ? ` · 🚗 ${p.tb}/${p.ta}` : ""}${p.km ? ` · ${String(p.km).replace(".", ",")} km` : ""})</small>${p.retry ? `<span class="sp-badge">${attemptLabel(p.retry.attempt)}</span>` : ""}${p.wish ? `<span class="sp-badge sp-badge-wish">⏰ ${esc(window.SPKunden.wishText(p.k))}</span>` : ""}</span><span class="sp-auto-works">${chipsHtml(p.k.id)}</span></span></div>`;
       });
       html += `</div>`;
     }
@@ -7722,12 +8130,14 @@
       return { id: uuid(), date, time, customer: k.name, street: k.street, house: k.house, zip: k.zip, city: k.city, duration: p.dur || dur, notes: k.notes || "", works: autoWorkList(w), workOther: w.other ? w.text.trim() : "", kid: k.id, knr: k.nr, ...(k.bossNote ? { bossNote: k.bossNote } : {}), ...(p.tb ? { travelBefore: p.tb } : {}), ...(p.ta ? { travelAfter: p.ta } : {}), ...(p.retry ? { attempt: p.retry.attempt, prevId: p.retry.prevId } : {}), auto: batch, updatedAt: now };
     });
     persist({ appointments: appointments().concat(items) });
+    if ($("spAutoPool").checked) poolAdd(items.map(a => a.id));
     autoSavePrefs({ lastBatch: batch, start: $("spAutoStart").value, end: $("spAutoEnd").value, duration: String(dur), pause: $("spAutoBreak").checked, max: plan.maxDay || "", wish: $("spAutoWish").checked, route: $("spAutoRoute").checked, drive: $("spAutoDrive").checked, speed: Number($("spAutoSpeed").value) || 40 });
     moduleState.date = fromIso(items[0].date);
     moduleState.view = "week";
     closeAutoModal();
     render();
     renderProposalList();
+    { const n = leadsOf(items.filter(isWa)).length; if (n) showNotice(`💬 ${n} ${n === 1 ? "Anmeldung geht" : "Anmeldungen gehen"} per WhatsApp raus (WhatsApp-Pool) – dafür wird kein Zettel gedruckt.`); }
     alert(`${items.length} ${items.length === 1 ? "Termin wurde" : "Termine wurden"} angelegt (${shortDate(items[0].date)} bis ${shortDate(items[items.length - 1].date)}).` + (plan.unplaced.length ? `\n\nFür ${plan.unplaced.length} Kunden war kein Platz mehr.` : ""));
   }
 
@@ -7743,6 +8153,70 @@
     render();
     renderProposalList();
     updateAuto();
+  }
+
+  /* Offene Termine für die Kundenübersicht: weder erledigt noch „nicht angetroffen“ (Löschen/Erledigen lässt den Eintrag verschwinden) */
+  function openAptList() {
+    return appointments().filter(a => !a.done && !a.missed && (a.kid || a.knr)).sort((x, y) => (x.date + (x.time || "")).localeCompare(y.date + (y.time || ""))).map(a => {
+      const att = attemptOf(a), hint = aptHintLines(a).join(" · ");
+      return { id: a.id, kid: a.kid || "", knr: a.kid ? "" : String(a.knr || ""), date: a.date, dateText: new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }).format(fromIso(a.date)), dateShort: new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit" }).format(fromIso(a.date)).replace(/\.?$/, "."), time: a.time || "",
+        label: att > 1 ? attemptLabel(att) : "", works: worksText(a), notes: a.notes || "", hint,
+        status: annState(a) === "ok" ? "✔ Termin ist dem Kunden angesagt" : annState(a) === "stale" ? "⚠ Termin geändert – neu ansagen" : "" };
+    });
+  }
+  /* ================= Zähler: erledigte Häuser (x/y) und Kasse (Bargeld) ================= */
+  function cashStart() { const v = data().cashStart; return typeof v === "string" ? v : ""; }
+  function handovers() { const h = data().cashHandovers; return Array.isArray(h) ? h : []; }
+  function cashFigures() {
+    const from = cashStart(), ok = d => !from || d >= from;
+    const bar = appointments().filter(a => a.done && a.invoice === "bar" && a.amount > 0 && ok(a.date)).reduce((n, a) => n + a.amount, 0);
+    const exp = expenses().filter(x => ok(x.date)).reduce((n, x) => n + x.amount, 0);
+    const give = handovers().filter(x => ok(x.date)).reduce((n, x) => n + x.amount, 0);
+    return { bar, exp, give, soll: Math.round((bar - exp - give) * 100) / 100 };
+  }
+  function renderStats(days) {
+    const from = iso(days[0]), to = iso(days[days.length - 1]);
+    const all = appointments(), inR = a => a.date >= from && a.date <= to;
+    const list = all.filter(a => inR(a) && !(a.missed && all.some(x => x.prevId === a.id && inR(x))));
+    const done = list.filter(a => a.done).length, el = $("spStatDone");
+    if (el) { $("spStatDoneNum").textContent = `${done}/${list.length}`; el.classList.toggle("all-done", list.length > 0 && done === list.length); }
+    const c = cashFigures(), b = $("spCashNum");
+    if (b) { b.textContent = fmtEUR(c.soll); b.parentElement.classList.toggle("neg", c.soll < 0); }
+  }
+  function renderCash() {
+    const c = cashFigures(), h = handovers().slice().sort((x, y) => (y.date + y.createdAt).localeCompare(x.date + x.createdAt));
+    $("spCashBig").textContent = fmtEUR(c.soll);
+    $("spCashBig").style.color = c.soll < 0 ? "#a02f2f" : "";
+    $("spCashLines").innerHTML = `<div><span>Bar kassiert</span><strong>${esc(fmtEUR(c.bar))}</strong></div>` +
+      `<div><span>− Ausgaben (Tanken usw.)</span><strong>${esc(fmtEUR(c.exp))}</strong></div>` +
+      `<div><span>− Dem Chef übergeben</span><strong>${esc(fmtEUR(c.give))}</strong></div>` +
+      (c.soll < 0 ? `<div style="color:#a02f2f"><span>Mehr übergeben als kassiert</span><strong>${esc(fmtEUR(-c.soll))}</strong></div>` : "");
+    $("spCashHist").innerHTML = h.length
+      ? `<div class="sp-works-title">Übergaben an den Chef</div>` + h.map(x => `<div class="sp-exp-row"><span>${esc(fmtDate(x.date))}</span><strong>${esc(fmtEUR(x.amount))}</strong><button type="button" data-sp-cash-del="${esc(x.id)}" aria-label="Übergabe löschen" title="Löschen">✕</button></div>`).join("")
+      : `<div class="sp-muted">Noch keine Übergabe eingetragen.</div>`;
+    $("spCashStart").value = cashStart();
+  }
+  function openCashModal() {
+    renderCash();
+    $("spHandDate").value = iso(new Date());
+    const soll = cashFigures().soll;
+    $("spHandAmount").value = soll > 0 ? String(soll.toFixed(2)).replace(".", ",") : "";
+    $("spCashModal").hidden = false;
+  }
+  function closeCashModal() { $("spCashModal").hidden = true; }
+  function saveHandover() {
+    const date = $("spHandDate").value, amount = parseAmount($("spHandAmount").value);
+    if (!date) return alert("Bitte das Datum der Übergabe wählen.");
+    if (amount === null || Number.isNaN(amount) || !(amount > 0)) return alert("Bitte den übergebenen Betrag eingeben, z. B. 250,00.");
+    persist({ cashHandovers: handovers().concat([{ id: uuid(), date, amount, createdAt: new Date().toISOString() }]) });
+    renderCash(); render();
+    $("spHandAmount").value = "";
+  }
+  function deleteHandover(id) {
+    const x = handovers().find(h => h.id === id);
+    if (!x || !confirm(`Übergabe vom ${fmtDate(x.date)} (${fmtEUR(x.amount)}) löschen?`)) return;
+    persist({ cashHandovers: handovers().filter(h => h.id !== id) });
+    renderCash(); render();
   }
 
   /* ================= Ausgaben aus den Bareinnahmen ================= */
@@ -7903,6 +8377,11 @@
     $("spAptBossNote").value = kRec && kRec.bossNote ? kRec.bossNote : "";
     $("spAptTravelB").value = old.travelBefore || (kRec && kRec.travelBefore) || "";
     $("spAptTravelA").value = old.travelAfter || (kRec && kRec.travelAfter) || "";
+    $("spAptWishFrom").value = old.wishFrom || "";
+    $("spAptWishTo").value = old.wishTo || "";
+    $("spAptHint").value = old.hint || "";
+    $("spAptMoreFields").open = !!($("spAptTravelB").value || $("spAptTravelA").value || old.wishFrom || old.wishTo || $("spAptBossNote").value);
+    updateAptWishInfo();
     moduleState.pendingRetry = { attempt: att, prevId: old.id };
     syncWorkOther(); showAptCustomerInfo();
     $("spModalTitle").textContent = `Termin anlegen – ${attemptLabel(att)}`;
@@ -7922,14 +8401,343 @@
   /* ================= Anmeldezettel-Abgleich ================= */
   /* Beim Drucken des Anmeldezettels wird Datum und Uhrzeit-Fenster notiert. Ändert sich der Termin später,
      erscheint ein Hinweis, damit Kalender und Zettel übereinstimmen. */
-  function slipStale(a) { return !!(a.slip && (a.slip.date !== a.date || a.slip.win !== timeWindow(a.time))); }
+  function slipStale(a) {
+    const u = slipUnit(a), anyPrinted = u.some(x => x.slip);
+    return u.some(x => x.slip ? (x.slip.date !== x.date || x.slip.win !== timeWindow(x.time) || (x.slip.n != null && x.slip.n !== u.length)) : (u.length > 1 && anyPrinted));
+  }
   function markSlipPrinted(list) {
-    const ids = new Set(list.map(a => a.id));
-    persist({ appointments: appointments().map(a => ids.has(a.id) ? { ...a, slip: { date: a.date, win: timeWindow(a.time) } } : a) });
+    const ids = new Set(); list.forEach(a => slipUnit(a).forEach(x => ids.add(x.id)));
+    const sizeOf = new Map(); appointments().forEach(a => { if (ids.has(a.id)) sizeOf.set(a.id, slipUnit(a).length); });
+    persist({
+      appointments: appointments().map(a => ids.has(a.id) ? { ...a, slip: { date: a.date, win: timeWindow(a.time), n: sizeOf.get(a.id) || 1 } } : a),
+      printPool: poolIds().filter(id => !ids.has(id))   // gedruckt = nicht mehr im Druckpool
+    });
+  }
+
+  /* ================= Druckpool: Anmeldezettel sammeln und zusammen drucken (2 pro A4) ================= */
+  function poolIds() { const p = data().printPool; return Array.isArray(p) ? p : []; }
+  function poolItems() {
+    const byId = new Map(appointments().map(a => [a.id, a]));
+    return leadsOf(poolIds().map(id => byId.get(id)).filter(Boolean)).sort((x, y) => (x.date + " " + x.time).localeCompare(y.date + " " + y.time));
+  }
+  function poolAutoOn() { return data().printPoolAuto !== false; }
+  function poolAdd(ids, force) {
+    if (!force) { const byId = new Map(appointments().map(a => [a.id, a])); ids = ids.filter(id => !isWa(byId.get(id))); }
+    const byId2 = new Map(appointments().map(a => [a.id, a])), all = new Set(ids);
+    ids.forEach(id => { const a = byId2.get(id); if (a) slipUnit(a).forEach(m => all.add(m.id)); });   // Gruppe wandert immer zusammen in den Pool
+    persist({ printPool: Array.from(new Set(poolIds().concat([...all]))) });
+  }
+  function poolRemove(ids) {
+    const x = new Set(ids), byId2 = new Map(appointments().map(a => [a.id, a]));
+    ids.forEach(id => { const a = byId2.get(id); if (a) slipUnit(a).forEach(m => x.add(m.id)); });
+    persist({ printPool: poolIds().filter(id => !x.has(id)) });
+  }
+  const inPool = id => poolIds().includes(id);
+  function updatePoolButton() {
+    const n = poolItems().length + sweepPoolItems().length, c = $("spPoolCount"), b = $("spPoolOpen");
+    if (c) { c.textContent = String(n); c.hidden = !n; }
+    if (b) b.classList.toggle("has-items", n > 0);
+  }
+  /* " – Adresse" bzw. bei Gruppen " – 🏘 3 Häuser: Adresse; Adresse; …" */
+  function unitAddrText(a) {
+    const u = slipUnit(a);
+    return u.length > 1 ? " – 🏘 " + u.length + " Häuser: " + esc(u.map(addrLine).join(" · ")) : (addrLine(a) ? " – " + esc(addrLine(a)) : "");
+  }
+  function poolReason(a) { return !slipUnit(a).some(x => x.slip) ? ["neu", ""] : slipStale(a) ? ["verschoben", "moved"] : ["Zettel erneut", "moved"]; }
+  function renderPool() {
+    const items = poolItems(), sw = sweepPoolItems(), n = items.length + sw.length, pages = Math.ceil(n / 2);
+    $("spPoolInfo").innerHTML = n
+      ? `${n} ${n === 1 ? "Zettel" : "Zettel"} = ${pages} A4-${pages === 1 ? "Seite" : "Seiten"}` + (n % 2 ? ` <span style="color:#8a5a00">· auf der letzten Seite ist noch Platz für 1 Zettel</span>` : ` <span style="color:#2e6f45">· Seiten voll belegt</span>`)
+      : "Der Druckpool ist leer.";
+    $("spPoolList").innerHTML = items.map(a => {
+      const [why, cls] = poolReason(a);
+      return `<div class="sp-pool-row"><div><strong>${esc(fmtDate(a.date))} · ${esc(a.time)} Uhr</strong><span class="sp-pool-why ${cls}">${esc(why)}</span><small>${esc(a.customer || "Ohne Kundennamen")}${unitAddrText(a)}</small></div><button type="button" class="sp-pool-x" data-sp-pool-del="${esc(a.id)}" title="Aus dem Druckpool nehmen" aria-label="Aus dem Druckpool nehmen">✕</button></div>`;
+    }).join("") + sw.map(({ e, a }) => `<div class="sp-pool-row"><div><strong>${esc(fmtDate(e.date))} · ${esc(e.time)} Uhr</strong><span class="sp-pool-why">🧹 Kehr-Zettel</span><small>${esc(a.customer || "Ohne Kundennamen")}${addrLine(a) ? " – " + esc(addrLine(a)) : ""}</small></div><button type="button" class="sp-pool-x" data-sp-sweep-del="${esc(a.id)}" title="Aus dem Druckpool nehmen" aria-label="Kehr-Zettel aus dem Druckpool nehmen">✕</button></div>`).join("");
+    $("spPoolPrint").disabled = !n; $("spPoolClear").disabled = !n;
+    $("spPoolAuto").checked = poolAutoOn();
+    const last = (Array.isArray(data().printLast) ? data().printLast : []).filter(id => appointments().some(a => a.id === id));
+    $("spPoolLast").innerHTML = last.length ? `<span class="sp-muted">Zuletzt gedruckt: ${last.length} ${last.length === 1 ? "Zettel" : "Zettel"}</span> <button type="button" class="sp-linkbtn" id="spPoolReprint">🖨 nochmal drucken</button>` : "";
+    const rp = $("spPoolReprint"); if (rp) rp.addEventListener("click", () => poolPrint(last));
+  }
+  function openPoolModal() {
+    if (!$("spPoolFrom").value) { $("spPoolFrom").value = iso(moduleState.date); $("spPoolTo").value = iso(addDays(moduleState.date, 6)); }
+    renderPool(); $("spPoolModal").hidden = false;
+  }
+  function closePoolModal() { $("spPoolModal").hidden = true; }
+  function poolPrint(ids) {
+    const byId = new Map(appointments().map(a => [a.id, a]));
+    const list = (ids || poolItems().map(a => a.id)).map(id => byId.get(id)).filter(Boolean).sort((x, y) => (x.date + " " + x.time).localeCompare(y.date + " " + y.time));
+    const sweeps = ids ? [] : sweepPoolItems().map(({ e, a }) => sweepData(a, e.date, e.time));   // Kehr-Zettel nur beim normalen Pool-Druck (nicht beim "nochmal drucken")
+    if (!list.length && !sweeps.length) return alert("Der Druckpool ist leer.");
+    const keep = list.map(a => a.id);
+    printProposals(list, true, `Anmeldezettel_Druckpool_${iso(new Date())}.pdf`, sweeps);
+    setTimeout(() => { persist({ printLast: keep }); if (!$("spPoolModal").hidden) renderPool(); }, 600);
+    closePoolModal();
+  }
+  function poolAddRange() {
+    const from = $("spPoolFrom").value, to = $("spPoolTo").value;
+    if (!from || !to || from > to) return alert("Bitte einen gültigen Zeitraum wählen.");
+    const all = rangeAppointments(from, to).filter(a => !a.missed);
+    const ids = all.filter(a => !isWa(a)).map(a => a.id), skipped = all.length - ids.length;
+    if (!all.length) return alert("In diesem Zeitraum sind keine Termine vorhanden.");
+    if (ids.length) poolAdd(ids);
+    renderPool(); render();
+    if (skipped) alert(`${skipped} ${skipped === 1 ? "Termin" : "Termine"} von WhatsApp-Kunden ${skipped === 1 ? "wurde" : "wurden"} nicht aufgenommen – ${skipped === 1 ? "er geht" : "sie gehen"} über den WhatsApp-Pool.`);
+  }
+  /* ================= Termin per WhatsApp / SMS ansagen ================= */
+  const MSG_TPL_DEFAULT = "Guten Tag,\nich bin {Mitarbeiter}, der Mitarbeiter von {Betrieb}.\nIch komme am {Datum} zwischen {Zeitfenster} Uhr zu Ihnen.\n{Objekte}\n{Anmeldung}\n\nGeplant: {Arbeiten}.\n{Zusatz}\nPasst der Termin nicht? Dann rufen Sie mich bitte an: {Telefon}\nMit freundlichen Grüßen\n{Mitarbeiter}🎩";
+  function msgTemplate() { const t = data().msgTemplate; return typeof t === "string" && t.trim() ? t : MSG_TPL_DEFAULT; }
+  function msgVars(a) {
+    const st = settings(), u = slipUnit(a), multi = u.length > 1;
+    const houseWorks = x => worksText(x).join(", ");
+    const unionWorks = []; u.forEach(x => worksText(x).forEach(w => { if (!unionWorks.includes(w)) unionWorks.push(w); }));
+    const [h1, h2] = unitHours(u);
+    return {
+      Objekte: multi ? `Der Termin gilt für Ihre ${u.length} Häuser:\n` + u.map(x => "• " + (addrLine(x) || x.customer || "") + (houseWorks(x) ? " – " + houseWorks(x) : "")).join("\n") : "",
+      Datum: new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(fromIso(a.date)) + " den " + shortDate(a.date),
+      Uhrzeit: a.time,
+      Zeitfenster: multi ? `${h1}-${h2}` : (h => Number.isFinite(h) ? `${h}-${h + 1}` : a.time)(Number(String(a.time).slice(0, 2))),
+      Arbeiten: multi ? unionWorks.join(", ") : worksText(a).join(", "),
+      Adresse: multi ? u.map(addrLine).join(" und ") : addrLine(a),
+      Name: a.customer || "",
+      Anmeldung: attemptOf(a) >= 3 ? "Dies ist die 3. und letzte Anmeldung. Nach dem Schornsteinfeger-Handwerksgesetz (SchfHwG, § 1 Abs. 1) sind Sie als Eigentümer verpflichtet, die im Feuerstättenbescheid festgelegten Arbeiten durchführen zu lassen." : attemptOf(a) === 2 ? "Dies ist die 2. Anmeldung." : "",
+      Mitarbeiter: st.employeeName || "",
+      Betrieb: st.businessName || "",
+      Absender: [st.employeeName, st.businessName].filter(Boolean).join(", ") || "Ihr Schornsteinfeger",
+      Telefon: st.phone || "",
+      Zusatz: u.some(x => Array.isArray(x.works) && x.works.includes("feststoff")) ? "Die Messung dauert ca. " + durText(workMinutesCfg().feststoff) + ". Bitte bereiten Sie Ihren Pelletkessel bzw. Scheitholzkessel dafür vor." : ""
+    };
+  }
+  /* Zeilen, in denen ein Platzhalter leer bleibt, entfallen ganz */
+  function fillTemplate(tpl, vars) {
+    return String(tpl).split(/\r?\n/).map(line => {
+      let empty = false;
+      const out = line.replace(/\{(\w+)\}/g, (m, key) => {
+        if (!(key in vars)) return m;
+        const v = String(vars[key] ?? "").trim();
+        if (!v) empty = true;
+        return v;
+      });
+      return empty ? null : out;
+    }).filter(l => l !== null).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+  /* "0171 123456 / mail@x.de" -> { phone, mail }; Handynummern (015x/016x/017x) haben Vorrang */
+  function phoneIntl(raw) {
+    let d = String(raw || "").replace(/\(0\)/g, "").replace(/[^\d+]/g, "");
+    if (!d) return "";
+    if (d.startsWith("+")) d = d.slice(1);
+    else if (d.startsWith("00")) d = d.slice(2);
+    else if (d.startsWith("0")) d = "49" + d.slice(1);
+    else d = "49" + d;
+    d = d.replace(/\D/g, "");
+    return d.length >= 9 && d.length <= 15 ? d : "";
+  }
+  function phoneParts(raw) {
+    const t = String(raw || "");
+    const mail = (t.match(/[^\s,;<>()]+@[^\s,;<>()]+\.[^\s,;<>()]+/) || [""])[0];
+    const nums = (t.replace(mail, " ").match(/\+?[\d(][\d\s\/().\-]{5,}\d/g) || []).map(x => x.trim()).filter(x => phoneIntl(x));
+    const phone = nums.find(x => /^491[567]/.test(phoneIntl(x))) || nums[0] || "";
+    return { phone, mail };
+  }
+  /* Kunden, die immer per WhatsApp angemeldet werden: kein Zettel, sondern WhatsApp-Pool */
+  const isWaOne = a => { const k = a && a.kid && window.SPKunden ? window.SPKunden.get(a.kid) : null; return !!(k && k.waReg); };
+  /* bei zusammengehörigen Häusern genügt ein WhatsApp-Kunde: die ganze Gruppe wird per WhatsApp angemeldet */
+  const isWa = a => isWaOne(a) || (!!grpOf(a) && slipUnit(a).some(isWaOne));
+  /* Kunde, dessen Handynummer für die Anmeldung gilt: bei Gruppen der WhatsApp-Kunde bzw. der erste mit Nummer */
+  function unitCustomer(a) {
+    const ks = slipUnit(a).map(x => x.kid && window.SPKunden ? window.SPKunden.get(x.kid) : null).filter(Boolean);
+    const hasPhone = k => !!phoneParts(k.phone).phone;
+    return ks.find(k => k.waReg && hasPhone(k)) || ks.find(hasPhone) || ks.find(k => k.waReg) || ks[0] || null;
+  }
+  function waPending() {
+    const t = iso(new Date());
+    return appointments().filter(a => isWa(a) && !a.done && !a.missed && a.date >= t && annState(a) !== "ok" && slipLead(a).id === a.id)
+      .sort((x, y) => (x.date + " " + x.time).localeCompare(y.date + " " + y.time));
+  }
+  function updateWaButton() {
+    const b = $("spWaOpen"), c = $("spWaCount"); if (!b) return;
+    const n = waPending().length;
+    b.hidden = !(n > 0 || (window.SPKunden && window.SPKunden.hasWa && window.SPKunden.hasWa()));
+    c.textContent = String(n); c.hidden = !n;
+    b.classList.toggle("has-items", n > 0);
+  }
+  function renderWa() {
+    const items = waPending();
+    $("spWaInfo").textContent = items.length ? `${items.length} ${items.length === 1 ? "Anmeldung" : "Anmeldungen"} per WhatsApp noch offen` : "Alles angesagt – nichts offen.";
+    $("spWaList").innerHTML = items.map(a => {
+      const k = unitCustomer(a);
+      const noNr = !phoneParts(k ? k.phone : "").phone, att = attemptOf(a);
+      return `<div class="sp-pool-row"><div><strong>${esc(fmtDate(a.date))} · ${esc(a.time)} Uhr</strong><span class="sp-pool-why ${a.announced ? "moved" : ""}">${a.announced ? "Termin geändert" : "neu"}</span>${att > 1 ? `<span class="sp-pool-why moved">${esc(attemptLabel(att))}</span>` : ""}<small>${esc(a.customer || "Ohne Kundennamen")}${unitAddrText(a)}${noNr ? " · ⚠ keine Handynummer" : ""}</small></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn btn-gold" style="min-height:40px;padding:6px 12px" data-sp-wa-open="${esc(a.id)}">📲 Ansagen</button><button type="button" class="btn btn-light" style="min-height:40px;padding:6px 12px" data-sp-wa-done="${esc(a.id)}" title="Schon anders angesagt – aus dem Pool nehmen">✓ erledigt</button></div></div>`;
+    }).join("");
+    $("spWaStart").disabled = !items.length;
+  }
+  function openWaModal() { renderWa(); $("spWaModal").hidden = false; }
+  function closeWaModal() { $("spWaModal").hidden = true; }
+  function waStart(id) {
+    const ids = waPending().map(a => a.id);
+    if (!ids.length) return;
+    closeWaModal();
+    openMsgModal(id || ids[0], ids);
+  }
+  const annKey = a => a.date + " " + a.time;
+  function annOne(a) {
+    if (!a || !a.announced || a.done) return "";
+    return a.announced.key === annKey(a) ? "ok" : "stale";
+  }
+  function annState(a) {
+    if (!a) return "";
+    const u = slipUnit(a).filter(x => !x.done);
+    if (u.length < 2) return annOne(a);
+    const st = u.map(annOne);
+    if (st.every(x => x === "ok")) return "ok";
+    return st.some(x => x === "stale" || x === "ok") ? "stale" : "";   // teils angesagt oder geändert -> neu ansagen
+  }
+  function markAnnounced(id, via) {
+    const a0 = appointments().find(x => x.id === id);
+    const ids = new Set(a0 ? slipUnit(a0).map(x => x.id) : [id]);
+    persist({ appointments: appointments().map(a => ids.has(a.id) ? { ...a, announced: { key: annKey(a), at: new Date().toISOString(), via } } : a) });
+    render();
+  }
+  const msgCurrent = () => appointments().find(x => x.id === moduleState.msgId) || null;
+  const msgDayList = a => moduleState.msgList
+    ? moduleState.msgList.map(id => appointments().find(x => x.id === id)).filter(Boolean)
+    : leadsOf(appointments().filter(x => x.date === a.date && !x.missed).sort(byTime));
+  function openMsgModal(id, list) {
+    const a0 = appointments().find(x => x.id === id);
+    if (!a0) return;
+    id = slipLead(a0).id;
+    moduleState.msgList = list || null;
+    moduleState.msgFromPool = !!list;
+    moduleState.msgId = id;
+    $("spMsgModal").hidden = false;
+    $("spMsgTpl").value = msgTemplate();
+    renderMsg();
+  }
+  function closeMsgModal() {
+    const back = moduleState.msgFromPool;
+    $("spMsgModal").hidden = true; moduleState.msgId = null; moduleState.msgList = null; moduleState.msgFromPool = false;
+    if (back) openWaModal();
+  }
+  function renderMsg() {
+    const a = msgCurrent(); if (!a) { closeMsgModal(); return; }
+    const k = unitCustomer(a);
+    const list = msgDayList(a), idx = list.findIndex(x => x.id === a.id);
+    $("spMsgPos").textContent = moduleState.msgList ? `Anmeldung ${idx + 1} von ${list.length} im WhatsApp-Pool` : `Termin ${idx + 1} von ${list.length} am ${shortDate(a.date)}`;
+    $("spMsgPrev").disabled = idx <= 0;
+    $("spMsgNext").disabled = idx < 0 || idx >= list.length - 1;
+    $("spMsgWho").innerHTML = `${esc(fmtDate(a.date))} · ${esc(a.time)} Uhr<small>${esc(a.customer || "Ohne Kundennamen")}${unitAddrText(a)}</small>`;
+    const pp = phoneParts(k ? k.phone : "");
+    moduleState.msgMail = pp.mail;
+    $("spMsgPhone").value = pp.phone;
+    $("spMsgMail").hidden = !pp.mail;
+    const canSave = !!k && !pp.phone && !!(window.SPKunden && window.SPKunden.setPhone);
+    $("spMsgSaveWrap").hidden = !canSave;
+    $("spMsgSavePhone").checked = canSave;
+    const vars = msgVars(a);
+    if (slipUnit(a).length > 1 && msgTemplate() === MSG_TPL_DEFAULT) vars.Arbeiten = "";   // die Arbeiten stehen schon in der Liste der Häuser
+    $("spMsgText").value = fillTemplate(msgTemplate(), vars);
+    updateMsgState();
+  }
+  function updateMsgState() {
+    const a = msgCurrent(); if (!a) return;
+    const raw = $("spMsgPhone").value.trim(), intl = phoneIntl(raw), ann = annState(a), bits = [];
+    if (ann === "ok") bits.push(`<span style="color:#2e6f45">✓ Schon angesagt am ${esc(new Date(a.announced.at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }))} Uhr.</span>`);
+    if (ann === "stale") bits.push(`<span style="color:#a02f2f">⚠ Der Termin wurde seit der letzten Ansage geändert – bitte neu ansagen.</span>`);
+    if (!raw) bits.push(`<span style="color:#8a5a00">Keine Handynummer hinterlegt – bitte oben eintragen.</span>`);
+    else if (!intl) bits.push(`<span style="color:#a02f2f">Die Nummer sieht ungültig aus.</span>`);
+    else if (!/^491[567]/.test(intl)) bits.push(`<span style="color:#8a5a00">Das sieht nach einer Festnetznummer aus – WhatsApp und SMS gehen nur mit Handynummern.</span>`);
+    $("spMsgState").innerHTML = bits.join("<br>");
+    $("spMsgWa").disabled = !intl; $("spMsgSms").disabled = !intl;
+  }
+  function msgStep(d) {
+    const a = msgCurrent(); if (!a) return;
+    const list = msgDayList(a), i = list.findIndex(x => x.id === a.id) + d;
+    if (i < 0 || i >= list.length) return;
+    moduleState.msgId = list[i].id; renderMsg();
+  }
+  function sendMsg(kind) {
+    const a = msgCurrent(); if (!a) return;
+    const text = $("spMsgText").value.trim();
+    if (!text) return alert("Die Nachricht ist leer.");
+    const intl = phoneIntl($("spMsgPhone").value);
+    if (kind !== "mail" && !intl) return alert("Bitte eine gültige Handynummer eintragen.");
+    if (kind !== "mail" && !$("spMsgSaveWrap").hidden && $("spMsgSavePhone").checked && a.kid && window.SPKunden) {
+      const k = window.SPKunden.get(a.kid);
+      window.SPKunden.setPhone(a.kid, (k && k.phone ? k.phone + " · " : "") + $("spMsgPhone").value.trim());
+      $("spMsgSaveWrap").hidden = true;
+    }
+    let url;
+    if (kind === "wa") url = "https://wa.me/" + intl + "?text=" + encodeURIComponent(text);
+    else if (kind === "sms") url = "sms:+" + intl + "?&body=" + encodeURIComponent(text);
+    else url = "mailto:" + moduleState.msgMail + "?subject=" + encodeURIComponent("Terminankündigung Schornsteinfeger am " + shortDate(a.date)) + "&body=" + encodeURIComponent(text);
+    markAnnounced(a.id, kind);
+    updateMsgState();
+    if (kind === "wa") window.open(url, "_blank");
+    else { const l = document.createElement("a"); l.href = url; document.body.appendChild(l); l.click(); l.remove(); }
+  }
+  async function copyMsg() {
+    const a = msgCurrent(); if (!a) return;
+    const ta = $("spMsgText");
+    try { await navigator.clipboard.writeText(ta.value); }
+    catch { ta.focus(); ta.select(); try { document.execCommand("copy"); } catch {} }
+    markAnnounced(a.id, "copy"); updateMsgState();
+    $("spMsgState").insertAdjacentHTML("afterbegin", `<span style="color:#2e6f45">📋 Text kopiert.</span><br>`);
+  }
+  function msgOpenDay() {
+    const day = iso(moduleState.date);
+    const list = leadsOf(appointments().filter(x => x.date === day && !x.missed).sort(byTime));
+    if (!list.length) return alert("Für diesen Tag gibt es keine Termine zum Ansagen.");
+    openMsgModal((list.find(x => annState(x) !== "ok") || list[0]).id);
+  }
+  /* Druckbereich: Untermenü (Tabs) */
+  function showPrintTab(name) {
+    document.querySelectorAll("[data-sp-ptab]").forEach(b => { const on = b.dataset.spPtab === name; b.classList.toggle("is-on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    document.querySelectorAll("[data-sp-ppanel]").forEach(p => { p.hidden = p.dataset.spPpanel !== name; });
+    $("spPrintDates").hidden = name === "ics";
+    $("spDayField").hidden = !(name === "day" || name === "done");
+  }
+  function bindPrintTabs() {
+    $("spPrintTabs").addEventListener("click", e => { const t = e.target.closest("[data-sp-ptab]"); if (t) showPrintTab(t.dataset.spPtab); });
+    showPrintTab("slip");
+  }
+  function bindMsg() {
+    $("spMsgDay").addEventListener("click", msgOpenDay);
+    $("spWaOpen").addEventListener("click", openWaModal);
+    $("spWaClose").addEventListener("click", closeWaModal);
+    $("spWaStart").addEventListener("click", () => waStart());
+    $("spWaList").addEventListener("click", e => {
+      const o = e.target.closest("[data-sp-wa-open]"); if (o) { waStart(o.dataset.spWaOpen); return; }
+      const d = e.target.closest("[data-sp-wa-done]"); if (d) { markAnnounced(d.dataset.spWaDone, "manual"); renderWa(); }
+    });
+    $("spMsgFromApt").addEventListener("click", () => { const id = moduleState.editingId; closeModal(); openMsgModal(id); });
+    $("spMsgClose").addEventListener("click", closeMsgModal);
+    $("spMsgPrev").addEventListener("click", () => msgStep(-1));
+    $("spMsgNext").addEventListener("click", () => msgStep(1));
+    $("spMsgWa").addEventListener("click", () => sendMsg("wa"));
+    $("spMsgSms").addEventListener("click", () => sendMsg("sms"));
+    $("spMsgMail").addEventListener("click", () => sendMsg("mail"));
+    $("spMsgCopy").addEventListener("click", copyMsg);
+    $("spMsgPhone").addEventListener("input", updateMsgState);
+    $("spMsgTplSave").addEventListener("click", () => {
+      persist({ msgTemplate: $("spMsgTpl").value.trim() });
+      const a = msgCurrent(); if (a) $("spMsgText").value = fillTemplate(msgTemplate(), msgVars(a));
+      $("spMsgState").innerHTML = `<span style="color:#2e6f45">✓ Vorlage gespeichert.</span>`;
+    });
+    $("spMsgTplReset").addEventListener("click", () => {
+      persist({ msgTemplate: "" }); $("spMsgTpl").value = MSG_TPL_DEFAULT;
+      const a = msgCurrent(); if (a) $("spMsgText").value = fillTemplate(msgTemplate(), msgVars(a));
+    });
+    document.addEventListener("click", e => { const d = $("spToolMore"); if (d && d.open && !d.contains(e.target)) d.open = false; });
+    $("spToolMore").addEventListener("click", e => { if (e.target.closest(".sp-toolmore-menu .btn")) $("spToolMore").open = false; });
   }
   function warnStale(id) {
     const a = appointments().find(x => x.id === id);
-    if (a && slipStale(a)) alert(`Achtung: Für diesen Termin wurde schon ein Anmeldezettel gedruckt (${shortDate(a.slip.date)}, ${a.slip.win} Uhr).\n\nIm Kalender steht er jetzt am ${shortDate(a.date)}, ${timeWindow(a.time)} Uhr.\n\nBitte den Anmeldezettel neu drucken, damit Zettel und Kalender übereinstimmen.`);
+    if (a && slipStale(a) && poolAutoOn()) {
+      poolAdd([a.id]);
+      showNotice(`🗂 Der Anmeldezettel von ${a.customer || "diesem Kunden"} ist durch die Änderung veraltet – der Termin liegt jetzt im Druckpool (${poolItems().length}).`);
+      return;
+    }
+    if (a && slipStale(a)) { const sl = (a.slip ? a : slipUnit(a).find(x => x.slip) || a).slip || { date: a.date, win: timeWindow(a.time) }; alert(`Achtung: Für diesen Termin wurde schon ein Anmeldezettel gedruckt (${shortDate(sl.date)}, ${sl.win} Uhr).\n\nIm Kalender steht er jetzt am ${shortDate(a.date)}, ${timeWindow(a.time)} Uhr.\n\nBitte den Anmeldezettel neu drucken, damit Zettel und Kalender übereinstimmen.`); }
   }
 
   /* ================= Termin verschieben ================= */
@@ -7962,6 +8770,7 @@
     const kc = a && a.kid && window.SPKunden ? window.SPKunden.get(a.kid) : null;
     if (holiday) msg.push(`Feiertag: ${holiday} – an Feiertagen kann kein Termin liegen.`);
     else {
+      if (a && aptWishText(a) && !aptWishOk(a, time, dur)) msg.push(`Der Kunde möchte ${aptWishText(a)} – diese Uhrzeit passt nicht.`);
       if (kc && window.SPKunden.wishText(kc) && !wishOk(kc, date, time, dur)) msg.push(`Außerhalb der Wunschzeit des Kunden (${window.SPKunden.wishText(kc)}).`);
       if (wd === 0 || wd === 6) msg.push("Der gewählte Tag ist ein Wochenende.");
       if (clash) msg.push(`Überschneidung mit dem Termin um ${clash.time} Uhr (${clash.customer || "ohne Namen"}). Die anderen Termine bleiben unverändert, auch deine Uhrzeit.`);
@@ -8154,7 +8963,14 @@
         if (a.invoice === "bar" && a.receiptNo && fs >= 0.78) cNote.push(line1("Quittung " + a.receiptNo, 7.8 * fs, false, "#4f5962"));
       } else {
       if (k && k.phone) cNote.push(line1("Tel. " + k.phone, 8.6 * fs, true));
+      if (aptWishText(a)) cNote.push(line1("Kunde: " + aptWishText(a), 8.6 * fs, true, "#8a4b00"));
       if (clampTravel(a.travelBefore) || clampTravel(a.travelAfter)) cNote.push(line1("Fahrt: " + clampTravel(a.travelBefore) + " Min. vorher · " + clampTravel(a.travelAfter) + " Min. nachher", 8.2 * fs, false, "#4f5962"));
+      aptHintLines(a).forEach(h => {
+        let t = h.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\uFE0F\u200D]/gu, "").replace(/\s+/g, " ").trim();
+        if (!t) return;
+        if (t.length > 120) t = t.slice(0, 118).trim() + "…";
+        wrap("! " + t, 8.4 * fs, true, wNote).forEach(x => cNote.push(line1(x, 8.4 * fs, true, "#8a4b00")));
+      });
       if (a.notes) cNote = cNote.concat(wrap(a.notes, 8.4 * fs, false, wNote).map(t => line1(t, 8.4 * fs, false)));
       if (lv.notes < 99) {
         // Telefon bleibt, Bemerkung wird gekürzt
@@ -8639,6 +9455,58 @@
     return new Blob([bytes], { type: "application/pdf" });
   }
 
+  /* ================= Kehr-Zettel: "Ich habe Ihren Schornstein gekehrt" (mit Datum und Uhrzeit) ================= */
+  function openSweepModal(id) {
+    const a = appointments().find(x => x.id === id);
+    if (!a) return;
+    moduleState.sweepId = id;
+    const u = slipUnit(a).filter(x => !x.missed);
+    $("spSweepDate").value = a.sweepSlip && a.sweepSlip.date ? a.sweepSlip.date : a.date;
+    $("spSweepRows").innerHTML = u.map(x => `<label class="sp-sweep-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0;font-weight:700"><input type="checkbox" class="sp-sweep-on" data-id="${esc(x.id)}" ${x.id === id || u.length === 1 ? "checked" : (x.done ? "" : "checked")} style="width:22px;height:22px"><span style="flex:1;min-width:150px">${esc(x.customer || "Ohne Namen")}<small class="sp-muted" style="display:block;font-weight:600">${esc(addrLine(x))}</small></span><input type="time" class="sp-sweep-time" data-id="${esc(x.id)}" value="${esc((x.sweepSlip && x.sweepSlip.time) || x.time || "")}" aria-label="Uhrzeit der Kehrung" style="min-height:44px"></label>`).join("");
+    $("spSweepModal").hidden = false;
+  }
+  function closeSweepModal() { $("spSweepModal").hidden = true; moduleState.sweepId = null; }
+  /* Daten eines Kehr-Zettels (A5, wie die Anmeldezettel) */
+  function sweepData(a, date, time) {
+    const base = proposalData({ ...a, date }, settings(), true);
+    return { ...base, kind: "sweep", multi: false, aptId: a.id, rawDate: date, rawTime: time, time, hint: "", last: false, notes: "" };
+  }
+  function sweepPoolList() { const p = data().sweepPool; return Array.isArray(p) ? p : []; }
+  function sweepPoolItems() {
+    const byId = new Map(appointments().map(a => [a.id, a]));
+    return sweepPoolList().map(e => ({ e, a: byId.get(e.id) })).filter(x => x.a).sort((x, y) => (x.e.date + " " + x.e.time).localeCompare(y.e.date + " " + y.e.time));
+  }
+  function markSweepsPrinted(sweeps) {
+    const m = new Map(sweeps.map(d => [d.aptId, d])), now = new Date().toISOString();
+    persist({
+      appointments: appointments().map(a => m.has(a.id) ? { ...a, sweepSlip: { date: m.get(a.id).rawDate, time: m.get(a.id).rawTime, at: now } } : a),
+      sweepPool: sweepPoolList().filter(e => !m.has(e.id))
+    });
+    render(); updatePoolButton(); if ($("spPoolModal") && !$("spPoolModal").hidden) renderPool();
+  }
+  function printSweep(toPool) {
+    const date = $("spSweepDate").value;
+    if (!date) return alert("Bitte das Datum der Kehrung eintragen.");
+    const picked = [];
+    document.querySelectorAll("#spSweepRows .sp-sweep-on").forEach(c => {
+      if (!c.checked) return;
+      const a = appointments().find(x => x.id === c.dataset.id), t = document.querySelector(`#spSweepRows .sp-sweep-time[data-id="${CSS.escape(c.dataset.id)}"]`).value;
+      if (a) picked.push({ a, time: t });
+    });
+    if (!picked.length) return alert("Bitte mindestens ein Haus auswählen.");
+    if (picked.some(p => !p.time)) return alert("Bitte bei jedem Haus die Uhrzeit der Kehrung eintragen – sie steht auf dem Zettel.");
+    closeSweepModal();
+    if (toPool) {
+      const ids = new Set(picked.map(p => p.a.id));
+      persist({ sweepPool: sweepPoolList().filter(e => !ids.has(e.id)).concat(picked.map(p => ({ id: p.a.id, date, time: p.time }))) });
+      render(); updatePoolButton();
+      showNotice(`🧹 ${picked.length === 1 ? "Der Kehr-Zettel liegt" : picked.length + " Kehr-Zettel liegen"} im Druckpool (${poolItems().length + sweepPoolItems().length}) und ${picked.length === 1 ? "wird" : "werden"} mit den Anmeldezetteln gedruckt.`);
+      return;
+    }
+    const sweeps = picked.map(p => sweepData(p.a, date, p.time));
+    printProposals([], true, "Kehr-Zettel_" + date + ".pdf", sweeps);
+  }
+
   function openPdfTab(blob, name) {
     const url = URL.createObjectURL(blob);
     const w = window.open(url, "_blank");
@@ -8682,7 +9550,8 @@
   async function mailDone(range) {
     const to = ($("spBossEmail").value || "").trim();
     if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(to)) {
-      alert("Bitte zuerst oben die E-Mail-Adresse des Chefs eintragen.");
+      alert("Bitte zuerst die E-Mail-Adresse des Chefs eintragen.");
+      $("spBossBox").open = true;
       $("spBossEmail").scrollIntoView({ block: "center" }); $("spBossEmail").focus();
       return;
     }
@@ -8743,18 +9612,50 @@
     printDays([d], "done");
   }
 
+  /* Neuer Termin bei einem Kunden mit Gruppe: die anderen Häuser am selben Tag direkt anschließend mit einplanen */
+  function offerGroupSiblings(item) {
+    const k = item.kid && window.SPKunden ? window.SPKunden.get(item.kid) : null;
+    if (!k || !k.group || !window.SPKunden.groupMembers) return [];
+    const ex = appointments();
+    const sib = window.SPKunden.groupMembers(k.group).filter(m => m.id !== k.id && !ex.some(x => x.kid === m.id && x.date === item.date && !x.missed));
+    if (!sib.length) return [];
+    const lines = sib.map(m => "• " + (addrLine(m) || m.name)).join("\n");
+    if (!confirm(`🏘 Zu „${k.group}" gehören noch ${sib.length === 1 ? "1 weiteres Haus" : sib.length + " weitere Häuser"}:\n\n${lines}\n\nAm ${fmtDate(item.date)} direkt anschließend mit einplanen und zusammen anmelden?\n\n(OK = mit einplanen, Abbrechen = nur dieses Haus)`)) return [];
+    let t = toMin(item.time) + (Number(item.duration) || 15) + clampTravel(item.travelAfter);
+    const created = [], now = new Date().toISOString();
+    sib.forEach(m => {
+      const tb = clampTravel(m.travelBefore), ta = clampTravel(m.travelAfter), rt = retryInfo(m);
+      t += tb;
+      const it = { id: uuid(), date: item.date, time: fromMin(Math.min(t, 23 * 60 + 45)), customer: m.name, street: m.street, house: m.house, zip: m.zip, city: m.city, duration: Number(item.duration) || 15, notes: m.notes || "", works: Array.isArray(item.works) ? item.works.slice() : [], workOther: item.workOther || "", kid: m.id, knr: m.nr, ...(m.bossNote ? { bossNote: m.bossNote } : {}), ...(tb ? { travelBefore: tb } : {}), ...(ta ? { travelAfter: ta } : {}), ...(rt && !rt.exhausted ? { attempt: rt.attempt, prevId: rt.prevId } : {}), updatedAt: now };
+      created.push(it); t += it.duration + ta;
+    });
+    persist({ appointments: appointments().concat(created) });
+    return created;
+  }
   function saveAppointment(opts) {
     const doPrint = !!(opts && opts.print === true);
+    moduleState.editingIdBeforeSave = moduleState.editingId;
     const date=$("spAptDate").value, time=$("spAptTime").value;
     if (!date || !time) return alert("Bitte Datum und Uhrzeit angeben.");
     const holiday=holidayMap(new Date(date).getFullYear()).get(date);
     if (holiday) return alert(`Am ${fmtDate(date)} ist ${holiday}. Termine an Feiertagen sind standardmäßig gesperrt.`);
     const clash = overlapWith(date, time, Number($("spAptDuration").value) || 15, moduleState.editingId, clampTravel($("spAptTravelB").value), clampTravel($("spAptTravelA").value));
     if (clash && !confirm(`Der Termin überschneidet sich mit dem Termin um ${clash.time} Uhr (${clash.customer || "ohne Namen"}). Trotzdem speichern?`)) return;
-    const item={ id:moduleState.editingId || uuid(), date,time, customer:$("spAptCustomer").value.trim(), street:$("spAptStreet").value.trim(), house:$("spAptHouse").value.trim(), zip:$("spAptZip").value.trim(), city:$("spAptCity").value.trim(), duration:Number($("spAptDuration").value)||15, notes:$("spAptNotes").value.trim(), bossNote:$("spAptBossNote").value.trim(), travelBefore:clampTravel($("spAptTravelB").value), travelAfter:clampTravel($("spAptTravelA").value), works:selectedWorks(), workOther:$("spWorkOtherText").value.trim(), kid:moduleState.aptCustomer?.id||"", knr:moduleState.aptCustomer?.nr||"", ...(moduleState.pendingRetry && !moduleState.editingId ? { attempt: moduleState.pendingRetry.attempt, prevId: moduleState.pendingRetry.prevId } : {}), updatedAt:new Date().toISOString() };
+    { const w = formWish();
+      if (w.wishFrom && w.wishTo && toMin(w.wishFrom) >= toMin(w.wishTo)) return alert("Bei der Wunschzeit muss „Frühestens ab“ vor „Spätestens fertig bis“ liegen.");
+      if (!aptWishOk(w, time, Number($("spAptDuration").value) || 15) && !confirm(`Der Kunde möchte ${aptWishText(w)}, der Termin liegt um ${time} Uhr. Trotzdem speichern?`)) return; }
+    const item={ id:moduleState.editingId || uuid(), date,time, customer:$("spAptCustomer").value.trim(), street:$("spAptStreet").value.trim(), house:$("spAptHouse").value.trim(), zip:$("spAptZip").value.trim(), city:$("spAptCity").value.trim(), duration:Number($("spAptDuration").value)||15, notes:$("spAptNotes").value.trim(), hint:$("spAptHint").value.trim(), bossNote:$("spAptBossNote").value.trim(), travelBefore:clampTravel($("spAptTravelB").value), travelAfter:clampTravel($("spAptTravelA").value), wishFrom:$("spAptWishFrom").value || "", wishTo:$("spAptWishTo").value || "", works:selectedWorks(), workOther:$("spWorkOtherText").value.trim(), kid:moduleState.aptCustomer?.id||"", knr:moduleState.aptCustomer?.nr||"", ...(moduleState.pendingRetry && !moduleState.editingId ? { attempt: moduleState.pendingRetry.attempt, prevId: moduleState.pendingRetry.prevId } : {}), updatedAt:new Date().toISOString() };
     const list=appointments(); const idx=list.findIndex(x=>x.id===item.id); if(idx>=0) list[idx]={ ...list[idx], ...item }; else list.push(item);
     persist({appointments:list}); moduleState.selectedId=item.id; moduleState.date=fromIso(date); closeModal(); render();
-    if (doPrint) printAppointmentNow(item.id); else warnStale(item.id);
+    const wasNew = !moduleState.editingIdBeforeSave;
+    const sibs = wasNew ? offerGroupSiblings(item) : [];
+    if (sibs.length) render();
+    if (doPrint) printAppointmentNow(item.id);
+    else {
+      if (isWa(item) && !(opts && opts.pool)) { render(); showNotice(waPending().some(x => slipUnit(item).some(m => m.id === x.id)) ? `💬 ${item.customer || "Der Kunde"} wird per WhatsApp angemeldet${sibs.length ? " (" + (sibs.length + 1) + " Häuser zusammen)" : ""} – der Termin liegt im WhatsApp-Pool (${waPending().length}), kein Zettel nötig.` : ""); }
+      else if ((wasNew && poolAutoOn() && !(opts && opts.plain)) || (opts && opts.pool)) { poolAdd([item.id], true); render(); showNotice(`🗂 ${sibs.length ? (sibs.length + 1) + " Häuser liegen" : "Der Termin liegt"} als ein Zettel im Druckpool (${poolItems().length}).`); }
+      else warnStale(item.id);
+    }
   }
   /* Einzelnen Termin direkt drucken (A5 auf halber A4-Seite), ohne vorher auswählen zu müssen */
   function printAppointmentNow(id) {
@@ -8790,7 +9691,7 @@
     if(!list.length) return alert('Keine Termine im gewählten Zeitraum.');
     const now=new Date(); const stamp=`${now.getUTCFullYear()}${pad(now.getUTCMonth()+1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
     const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Schornstein Planer//DE','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
-    list.forEach(a=>{ const start=icsDateTime(a); const endDate=new Date(fromIso(a.date)); const [hh,mm]=a.time.split(':').map(Number); endDate.setHours(hh,mm+(Number(a.duration)||15),0,0); const end=`${iso(endDate).replaceAll('-','')}T${pad(endDate.getHours())}${pad(endDate.getMinutes())}00`; const address=[a.street&&`${a.street} ${a.house||''}`,a.zip,a.city].filter(Boolean).join(', '); lines.push('BEGIN:VEVENT',`UID:${icsEscape(a.id)}@schornstein-planer.de`,`DTSTAMP:${stamp}`,`DTSTART:${start}`,`DTEND:${end}`,`SUMMARY:${icsEscape('Schornsteinfegertermin – '+(a.customer||'Kundentermin'))}`,`LOCATION:${icsEscape(address)}`,`DESCRIPTION:${icsEscape(a.notes||'')}`,'END:VEVENT'); });
+    list.forEach(a=>{ const start=icsDateTime(a); const endDate=new Date(fromIso(a.date)); const [hh,mm]=a.time.split(':').map(Number); endDate.setHours(hh,mm+(Number(a.duration)||15),0,0); const end=`${iso(endDate).replaceAll('-','')}T${pad(endDate.getHours())}${pad(endDate.getMinutes())}00`; const address=[a.street&&`${a.street} ${a.house||''}`,a.zip,a.city].filter(Boolean).join(', '); lines.push('BEGIN:VEVENT',`UID:${icsEscape(a.id)}@schornstein-planer.de`,`DTSTAMP:${stamp}`,`DTSTART:${start}`,`DTEND:${end}`,`SUMMARY:${icsEscape('Schornsteinfegertermin – '+(a.customer||'Kundentermin'))}`,`LOCATION:${icsEscape(address)}`,`DESCRIPTION:${icsEscape([aptWishText(a)&&('Kunde möchte '+aptWishText(a)),aptHintText(a)&&('Hinweis: '+aptHintText(a)),a.notes].filter(Boolean).join('\n'))}`,'END:VEVENT'); });
     lines.push('END:VCALENDAR'); const blob=new Blob([lines.join('\r\n')+'\r\n'],{type:'text/calendar;charset=utf-8'}); const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=filename; link.click(); setTimeout(()=>URL.revokeObjectURL(link.href),1000);
   }
   function exportRange() { const from=$("spExportFrom").value,to=$("spExportTo").value; if(!from||!to||from>to) return alert('Bitte einen gültigen Exportzeitraum auswählen.'); downloadICS(rangeAppointments(from,to),`schornstein-planer-${from}-bis-${to}.ics`); }
@@ -8999,7 +9900,48 @@
     };
 
     /* sp = Abstandsfaktor: bei viel Inhalt wird enger gesetzt, damit alles auf eine Seite passt */
+    const drawSweep = (d, sp = 1) => {
+      const g = v => v * sp;
+      let y = 44;
+      T(ML, y, d.business, { size: 13, bold: true });
+      y += 13; T(ML, y, "Schornsteinfegerbetrieb", { size: 8.5, color: "#6c757d" });
+      d.bizAddr.split(/\r?\n/).filter(Boolean).forEach((ln, i) => { y += i ? 11 : 15; T(ML, y, ln, { size: 8.5, color: "#444444" }); });
+      y += 10; L(ML, y, ML + CW, y, "#c79a42", 1.4);
+      y += g(26); T(ML, y, "Hinweis zur Kehrung", { size: 9.5, bold: true, color: "#9a7220" });
+      y += g(25); T(ML, y, "Ihr Schornstein wurde gekehrt", { size: 19, bold: true });
+      y += g(30); T(ML, y, "Sehr geehrte Kundin, sehr geehrter Kunde,");
+      y += g(17);
+      const toks = [];
+      if (d.business) { const biz = words(d.business, true); biz[biz.length - 1].t += ","; toks.push(...words("als Schornsteinfegergeselle im Auftrag von"), ...biz, ...words("Schornsteinfegermeister, habe")); } else toks.push(...words("habe"));
+      toks.push(...words("ich Ihren Schornstein gekehrt. Da er frei zugänglich ist, konnte ich die Kehrung auch ohne Ihre Anwesenheit durchführen."));
+      y = flow(toks, ML, y, CW, 9.5, 14) + 3;
+      const top = y + g(12);
+      R(ML, top, CW, 19, { fill: "#22272d" });
+      T(ML + 12, top + 13, "Kehrung durchgeführt", { size: 10, bold: true, color: "#ffffff" });
+      y = top + 19 + g(15);
+      const xR = ML + CW * 0.55;
+      T(ML + 12, y, "Datum", { size: 8, color: "#6c757d" }); T(xR, y, "Uhrzeit der Kehrung", { size: 8, color: "#6c757d" });
+      let vs = 13; while (vs > 9 && wid(d.dateStr, true, vs) > xR - ML - 24) vs -= 0.5;
+      y += g(17); T(ML + 12, y, d.dateStr, { size: vs, bold: true });
+      let ts = 14; while (ts > 8 && wid(d.time + " Uhr", true, ts) > ML + CW - 12 - xR) ts -= 0.5;
+      T(xR, y, d.time + " Uhr", { size: ts, bold: true });
+      y += g(11); L(ML + 12, y, ML + CW - 12, y, "#d5d9dd", 0.6);
+      y += g(15); T(ML + 12, y, "Objekt", { size: 8, color: "#6c757d" });
+      [d.customer, ...d.addrLines].filter(Boolean).forEach(ln => wrap(ln, 10.5, true, CW - 24).forEach(w => { y += g(15); T(ML + 12, y, w, { size: 10.5, bold: true }); }));
+      y += g(12); R(ML, top, CW, y - top, { stroke: "#22272d", lw: 1.1 });
+      y += g(22);
+      wrap("Für Ihr Vertrauen möchte ich mich herzlich bedanken. Bei Rückfragen erreichen Sie mich gerne unter:", 9.5, false, CW).forEach((ln, i) => { if (i) y += 14; T(ML, y, ln); });
+      y += g(12); R(ML, y, CW, 30, { fill: "#fbf5e7", stroke: "#c79a42", lw: 0.9 });
+      T(ML + 14, y + 19, "Telefon", { size: 9, color: "#6c757d" });
+      T(ML + CW / 2 + 16, y + 20, d.phone, { size: 15, bold: true, align: "center" });
+      y += 30;
+      const sy = Math.max(y + g(26), H - 46 - 44);
+      T(ML, sy, "Mit freundlichen Grüßen");
+      T(ML, sy + g(30), d.employee, { bold: true });
+      return sy + g(30) + 4;
+    };
     const drawSheet = (d, sp = 1) => {
+    if (d.kind === "sweep") return drawSweep(d, sp);
     const g = v => v * sp;
     const notesTxt = sp < 0.6 && d.notes.length > 140 ? d.notes.slice(0, 140).trim() + "…" : d.notes;
     let y = 44;
@@ -9034,8 +9976,9 @@
     T(xR, y, d.time + " Uhr", { size: ts, bold: true });
     y += g(11); L(ML + 12, y, ML + CW - 12, y, "#d5d9dd", 0.6);
     if (d.customer || d.addrLines.length) {
-      y += g(15); T(ML + 12, y, "Terminadresse", { size: 8, color: "#6c757d" });
-      [d.customer, ...d.addrLines].filter(Boolean).forEach(ln => wrap(ln, 10.5, true, CW - 24).forEach(w => { y += g(15); T(ML + 12, y, w, { size: 10.5, bold: true }); }));
+      y += g(15); T(ML + 12, y, d.multi ? "Terminadressen" : "Terminadresse", { size: 8, color: "#6c757d" });
+      const nA = d.multi ? d.addrLines.length : 0, fsA = nA > 3 ? Math.max(7.2, 10.5 - (nA - 3) * 0.45) : 10.5;   // viele Häuser: kleinere Schrift
+      [d.customer, ...d.addrLines].filter(Boolean).forEach(ln => wrap(ln, fsA, true, CW - 24).forEach(w => { y += g(fsA > 10 ? 15 : fsA * 1.55); T(ML + 12, y, w, { size: fsA, bold: true }); }));
     }
     if (notesTxt) {
       y += g(16);
@@ -9141,7 +10084,24 @@
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
-  function proposalData(a, s) {
+  function proposalData(a, s, single) {
+    const u = single ? [a] : slipUnit(a), multi = u.length > 1;
+    if (multi) {
+      /* Zusammengehörige Häuser: ein Zettel, Zeitfenster über alle Häuser, je Haus eine Zeile mit Arbeiten */
+      const [h1, h2] = unitHours(u), merged = [];
+      u.forEach(x => proposalWorks(x).forEach(w => { const f = merged.find(m => m.t === w.t); if (f) f.on = f.on || w.on; else merged.push({ ...w }); }));
+      const notes = u.map(x => x.notes ? `${[x.customer, [x.street, x.house].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "Haus"}: ${x.notes}` : "").filter(Boolean).join(" · ");
+      return {
+        ...proposalData({ ...a, notes: "" }, s, true),
+        time: `${pad(h1)}:00 – ${pad(h2 % 24)}:00`,
+        multi: true,
+        customer: "",   // jedes Haus nennt seinen eigenen Namen
+        addrLines: u.map(x => [x.customer, addrLine(x)].filter(Boolean).join(", ") + (proposalWorks(x).some(w => w.on) ? " (" + proposalWorks(x).filter(w => w.on).map(w => w.t).join(", ") + ")" : "")),
+        works: merged,
+        notes,
+        hint: u.some(x => Array.isArray(x.works) && x.works.includes("feststoff")) ? "Die Messung dauert ca. " + durText(workMinutesCfg().feststoff) + ". Bitte bereiten Sie Ihren Pelletkessel bzw. Scheitholzkessel für die Messung vor." : ""
+      };
+    }
     return {
       business: s.businessName || "[Name des Betriebs]",
       employee: s.employeeName || "[Name des Mitarbeiters]",
@@ -9174,11 +10134,44 @@
 
   const CHECK_SVG = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.6 5.4 4 7.8 8.5 2.2" fill="none" stroke="#22272d" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function sheetHtml(d) {
+  function sweepSheetHtml(d) {
     const business = esc(d.business), employee = esc(d.employee), phone = esc(d.phone);
-    const addr = d.addrLines.map(esc).join("<br>");
+    const bizAddr = d.bizAddr ? `<div class="biz-addr">${esc(d.bizAddr)}</div>` : "";
+    const obj = [d.customer, ...d.addrLines].filter(Boolean).map(esc).join("<br>");
+    return `
+      <div class="sheet">
+        <div class="head"><div><div class="biz-name">${business}</div><div class="biz-role">Schornsteinfegerbetrieb</div>${bizAddr}</div></div>
+        <div class="kicker">Hinweis zur Kehrung</div>
+        <h1>Ihr Schornstein wurde gekehrt</h1>
+        <div class="letter">
+          <p>Sehr geehrte Kundin, sehr geehrter Kunde,</p>
+          <p>${d.business ? `als Schornsteinfegergeselle im Auftrag von <strong>${business}</strong>, Schornsteinfegermeister, habe` : "habe"} ich Ihren Schornstein gekehrt. Da er frei zugänglich ist, konnte ich die Kehrung auch ohne Ihre Anwesenheit durchführen.</p>
+        </div>
+        <div class="appt">
+          <div class="appt-title">Kehrung durchgeführt</div>
+          <div class="appt-body">
+            <div class="when">
+              <div><div class="k">Datum</div><div class="v">${esc(d.dateStr)}</div></div>
+              <div><div class="k">Uhrzeit der Kehrung</div><div class="v">${esc(d.time)} Uhr</div></div>
+            </div>
+            ${obj ? `<div class="where"><div class="k">Objekt</div><div class="v">${obj}</div></div>` : ""}
+          </div>
+        </div>
+        <div class="contact">Für Ihr Vertrauen möchte ich mich herzlich bedanken. Bei Rückfragen erreichen Sie mich gerne unter:</div>
+        <div class="phone"><span class="lbl">Telefon</span><span class="num">${phone}</span></div>
+        <div class="sign">
+          Mit freundlichen Grüßen
+          <div class="name">${employee}</div>
+        </div>
+      </div>`;
+  }
+  function sheetHtml(d) {
+    if (d.kind === "sweep") return sweepSheetHtml(d);
+    const business = esc(d.business), employee = esc(d.employee), phone = esc(d.phone);
+    const nA = d.multi ? d.addrLines.length : 0, fsA = nA > 3 ? Math.max(7.2, 10.5 - (nA - 3) * 0.45) : 0;   // viele Häuser: Schrift verkleinern, damit alles auf eine Seite passt
+    const addr = fsA ? `<span style="font-size:${fsA}pt;line-height:1.3;display:block">${d.addrLines.map(esc).join("<br>")}</span>` : d.addrLines.map(esc).join("<br>");
     const where = (d.customer || addr)
-      ? `<div class="where"><div class="k">Terminadresse</div><div class="v">${d.customer ? esc(d.customer) + (addr ? "<br>" : "") : ""}${addr}</div></div>`
+      ? `<div class="where"><div class="k">${d.multi ? "Terminadressen" : "Terminadresse"}</div><div class="v">${d.customer ? esc(d.customer) + (addr ? "<br>" : "") : ""}${addr}</div></div>`
       : "";
     const notes = d.notes ? `<div class="notes"><strong>Hinweis:</strong> ${esc(d.notes)}</div>` : "";
     const bizAddr = d.bizAddr ? `<div class="biz-addr">${esc(d.bizAddr)}</div>` : "";
@@ -9231,11 +10224,14 @@
     return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   }
 
-  function printProposals(list, twoUp, fname) {
-    if (!list.length) return;
+  function printProposals(list, twoUp, fname, sweeps) {
+    sweeps = sweeps || [];
+    if (!list.length && !sweeps.length) return;
     cleanupPrint();
-    const items = list.map(a => proposalData(a, settings()));
-    setTimeout(() => markSlipPrinted(list), 400);   // gedruckten Stand merken (für den Abgleich Kalender ↔ Zettel)
+    list = leadsOf(list);   // zusammengehörige Häuser: ein Zettel für die ganze Gruppe
+    const items = list.map(a => proposalData(a, settings())).concat(sweeps);   // Kehr-Zettel stehen hinter den Anmeldezetteln
+    if (list.length) setTimeout(() => markSlipPrinted(list), 400);   // gedruckten Stand merken (für den Abgleich Kalender ↔ Zettel)
+    if (sweeps.length) setTimeout(() => markSweepsPrinted(sweeps), 700);
 
     // iPhone/iPad (Home-Bildschirm-App: window.print() gesperrt; Safari: Seitengröße unzuverlässig)
     // -> PDF erzeugen und über das Teilen-Menü drucken
@@ -9281,9 +10277,11 @@
   function printRangeProposals() {
     const from = $("spProposalFrom").value, to = $("spProposalTo").value;
     if (!from || !to || from > to) return alert("Bitte einen gültigen Zeitraum auswählen.");
-    const list = rangeAppointments(from, to);
-    if (!list.length) return alert("In diesem Zeitraum sind keine Termine vorhanden.");
+    const all = rangeAppointments(from, to), list = all.filter(a => !isWa(a)), skipped = all.length - list.length;
+    if (!all.length) return alert("In diesem Zeitraum sind keine Termine vorhanden.");
+    if (!list.length) return alert("Alle Termine in diesem Zeitraum gehören WhatsApp-Kunden – sie werden über den WhatsApp-Pool angemeldet, nicht gedruckt.");
     printProposals(list, true, `Terminvorschlaege_${from}_bis_${to}.pdf`);
+    if (skipped) setTimeout(() => showNotice(`💬 ${skipped} ${skipped === 1 ? "Termin" : "Termine"} von WhatsApp-Kunden nicht gedruckt – ${skipped === 1 ? "er liegt" : "sie liegen"} im WhatsApp-Pool.`), 900);
   }
 
   window.SchornsteinPlanerTermine = { render };
