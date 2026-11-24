@@ -2,7 +2,11 @@
  *
  * Gemeinsame Kundenliste für Terminplaner und Luftverbund-Rechner.
  *
- * Kundennummern:  HHHH.ZZZ   (0001.000 bis 9999.999)
+ * Programme (Auswahl oben in der Kundenverwaltung):
+ *   Hottgenroth:  HHHH.ZZZ   (0001.000 bis 9999.999)
+ *   Dexheimer:    OO-SSS-HHHH (Ortschaft – Straße – Hausnummer, z. B. 02-001-0001)
+ *
+ * Kundennummern Hottgenroth:  HHHH.ZZZ   (0001.000 bis 9999.999)
  *   HHHH = laufende Nummer des Hauses (1 bis 9999)
  *   ZZZ  = Zusatz für Einschübe (000 bis 999)
  *   Anzeige ohne führende Nullen: 1.000 · 2.000 · 10.000 · 1000.000
@@ -29,6 +33,10 @@
     });
   }
 
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
   function pad3(n) {
     return String(n).padStart(3, "0");
   }
@@ -42,8 +50,60 @@
      ============================================================ */
 
   /* "2.001" / "2001" / "0002.001" -> { haus: 2, zus: 1 } oder null */
+  var PROG_KEY = "schornstein-planer-kunden-programm";
+  var PROGS = {
+    hottgenroth: { name: "Hottgenroth", ex: "2.001" },
+    dexheimer: { name: "Dexheimer", ex: "02-001-0001" }
+  };
+
+  function getProg() {
+    try {
+      var v = localStorage.getItem(PROG_KEY);
+
+      return PROGS[v] ? v : "hottgenroth";
+    } catch (e) {
+      return "hottgenroth";
+    }
+  }
+
+  function setProg(v) {
+    if (!PROGS[v]) return;
+
+    try {
+      localStorage.setItem(PROG_KEY, v);
+    } catch (e) {}
+  }
+
+  /* "02-001-0001" / "2-1-1" / "020010001" -> { dex:true, ort, str, haus } */
+  function parseDex(t) {
+    var m = /^(\d{1,2})-(\d{1,3})-(\d{1,4})$/.exec(t);
+
+    if (!m && /^\d{9}$/.test(t)) m = [0, t.slice(0, 2), t.slice(2, 5), t.slice(5)];
+
+    if (!m) return null;
+
+    var o = parseInt(m[1], 10);
+    var sr = parseInt(m[2], 10);
+    var h = parseInt(m[3], 10);
+
+    if (o < 1 || sr < 1 || h < 1) return null;
+
+    return { dex: true, ort: o, str: sr, haus: h };
+  }
+
+  function progOfNr(nr) {
+    var p = parseNr(nr);
+
+    return p && p.dex ? "dexheimer" : "hottgenroth";
+  }
+
   function parseNr(s) {
-    var t = String(s == null ? "" : s).trim().replace(",", ".").replace(/\s+/g, "");
+    var t0 = String(s == null ? "" : s).trim().replace(/\s+/g, "");
+    var dx = parseDex(t0);
+
+    if (dx) return dx;
+
+    var t = t0.replace(",", ".");
     var m = /^(\d{1,4})(?:\.(\d{3}))?$/.exec(t);
 
     if (!m) return null;
@@ -57,11 +117,15 @@
   }
 
   function fmtNr(p) {
+    if (p.dex) return String(p.ort).padStart(2, "0") + "-" + pad3(p.str) + "-" + String(p.haus).padStart(4, "0");
+
     return p.haus + "." + pad3(p.zus);
   }
 
   function nrSort(k) {
     var p = parseNr(k.nr);
+
+    if (p && p.dex) return 1e10 + p.ort * 1e7 + p.str * 1e4 + p.haus;
 
     return p ? p.haus * 1000 + p.zus : Infinity;
   }
@@ -168,8 +232,11 @@
       zip: String(k.zip || ""),
       city: String(k.city || ""),
       phone: String(k.phone || ""),
+      waReg: k.waReg === true || k.waReg === "true",
+      group: String(k.group || "").trim().slice(0, 60),
       ownerAddr: String(k.ownerAddr || ""),
       notes: String(k.notes || ""),
+      hint: String(k.hint || ""),
       bossNote: String(k.bossNote || ""),
       wishes: cleanWishes(k.wishes),
       lat: coord(k.lat, 90),
@@ -225,7 +292,7 @@
     kunden.forEach(function (k) {
       var p = parseNr(k.nr);
 
-      if (!p) return;
+      if (!p || p.dex) return;
 
       used[p.haus] = true;
 
@@ -239,6 +306,64 @@
     }
 
     return null;
+  }
+
+  /* Dexheimer: nächste Nummer OO-SSS-HHHH – Ort und Straße von vorhandenen Kunden übernehmen, sonst die nächste freie */
+  function nextDexNr(ctx) {
+    ctx = ctx || {};
+
+    var city = String(ctx.city || "").trim().toLowerCase();
+    var street = String(ctx.street || "").trim().toLowerCase();
+    var list = [];
+
+    kunden.forEach(function (k) {
+      var p = parseNr(k.nr);
+
+      if (p && p.dex) list.push({ k: k, p: p });
+    });
+
+    var ort = 0;
+    var maxOrt = 0;
+
+    list.forEach(function (x) {
+      if (x.p.ort > maxOrt) maxOrt = x.p.ort;
+
+      if (!ort && city && String(x.k.city || "").trim().toLowerCase() === city) ort = x.p.ort;
+    });
+
+    if (!ort) ort = maxOrt ? (city ? maxOrt + 1 : maxOrt) : 1;
+
+    var inOrt = list.filter(function (x) {
+      return x.p.ort === ort;
+    });
+    var str = 0;
+    var maxStr = 0;
+
+    inOrt.forEach(function (x) {
+      if (x.p.str > maxStr) maxStr = x.p.str;
+
+      if (!str && street && String(x.k.street || "").trim().toLowerCase() === street) str = x.p.str;
+    });
+
+    if (!str) str = maxStr ? (street ? maxStr + 1 : maxStr) : 1;
+
+    var used = {};
+    var maxH = 0;
+
+    inOrt.forEach(function (x) {
+      if (x.p.str !== str) return;
+
+      used[x.p.haus] = true;
+
+      if (x.p.haus > maxH) maxH = x.p.haus;
+    });
+
+    var hn = parseInt(String(ctx.house || "").replace(/^\D+/, ""), 10);
+    var haus = hn >= 1 && hn <= 9999 && !used[hn] ? hn : maxH + 1;
+
+    if (ort > 99 || str > 999 || haus > 9999) return null;
+
+    return fmtNr({ dex: true, ort: ort, str: str, haus: haus });
   }
 
   /* Einschub nach einem vorhandenen Kunden: gleiche Hausnummer, nächster freier Zusatz */
@@ -260,13 +385,16 @@
     return fmtNr({ haus: base.haus, zus: maxZus + 1 });
   }
 
-  function checkNr(input, ownId) {
+  function checkNr(input, ownId, prog) {
     var p = parseNr(input);
+    var want = prog || getProg();
 
-    if (!p) {
+    if (!p || (p.dex ? "dexheimer" : "hottgenroth") !== want) {
       return {
         error:
-          "Bitte eine Kundennummer von 1.000 bis 9999.999 eingeben (drei Stellen nach dem Punkt, z. B. 2.001)."
+          want === "dexheimer"
+            ? "Bitte eine Kundennummer im Dexheimer-Format eingeben: Ortschaft-Straße-Hausnummer, z. B. 02-001-0001."
+            : "Bitte eine Kundennummer von 1.000 bis 9999.999 eingeben (drei Stellen nach dem Punkt, z. B. 2.001)."
       };
     }
 
@@ -350,7 +478,7 @@
 
     if (!s) return true;
 
-    var hay = [k.name, k.street, k.house, k.city, k.zip, k.phone, k.nr]
+    var hay = [k.name, k.street, k.house, k.city, k.zip, k.phone, k.nr, k.hint]
       .join(" ")
       .toLowerCase();
 
@@ -362,7 +490,9 @@
     if (digits && /^[\d.,\s]+$/.test(s)) {
       var p = parseNr(k.nr);
 
-      if (p && (p.haus + pad3(p.zus)).indexOf(digits) === 0) return true;
+      if (p && p.dex && (pad2(p.ort) + pad3(p.str) + String(p.haus).padStart(4, "0")).indexOf(digits) === 0) return true;
+
+      if (p && !p.dex && (p.haus + pad3(p.zus)).indexOf(digits) === 0) return true;
     }
 
     return false;
@@ -399,6 +529,27 @@
     ".kv-list{display:flex;flex-direction:column;gap:8px}" +
     ".kv-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;padding:12px 14px;min-height:54px;border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:12px;background:#fff;color:var(--text);cursor:pointer;font:inherit}" +
     ".kv-row:hover,.kv-row:focus-visible{background:#fffaf0;outline:none}" +
+    ".kv-prog{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}" +
+    ".kv-prog-l{font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}" +
+    ".kv-progb{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid #d5d9dd;background:#fff;border-radius:12px;padding:8px 14px;min-height:44px;font:inherit;color:var(--text);cursor:pointer;text-align:left}" +
+    ".kv-progb strong{font-size:.95rem}" +
+    ".kv-progb small{font-size:.74rem;color:var(--muted)}" +
+    ".kv-progb:hover{border-color:var(--gold)}" +
+    "@media (max-width:600px){.kv-prog-l{flex:0 0 100%}.kv-progb{flex:1 1 0;min-width:0}}" +
+    ".kv-progb.on{background:var(--dark);border-color:var(--dark);color:#fff}" +
+    ".kv-progb.on small{color:#d3d8dd}" +
+    ".kv-apt{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:#f1f3f5;color:#7a6a45;font-size:.72rem;font-weight:700;line-height:1.5;vertical-align:1px;cursor:pointer;white-space:nowrap}" +
+    ".kv-apt:hover,.kv-apt:focus-visible{background:#f7ecd2;color:#4d3d17;outline:none}" +
+    ".kv-popbg{position:fixed;inset:0;z-index:10000;background:rgba(20,25,30,.4);display:flex;align-items:center;justify-content:center;padding:16px}" +
+    ".kv-pop{background:#fff;border-radius:16px;padding:14px 16px 16px;width:100%;max-width:350px;max-height:80vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.28)}" +
+    ".kv-pop-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}" +
+    ".kv-pop-head strong{font-size:.95rem;color:var(--text)}" +
+    ".kv-pop-x{border:0;background:#f1f3f5;border-radius:50%;width:30px;height:30px;font:inherit;font-size:.95rem;line-height:1;color:#5c6670;cursor:pointer}" +
+    ".kv-pop-it{padding:10px 0;border-top:1px solid #eceff1}" +
+    ".kv-pop-it:first-of-type{border-top:0}" +
+    ".kv-pop-when{font-weight:800;font-size:1.05rem}" +
+    ".kv-pop-line{margin-top:3px;font-size:.88rem;color:var(--text)}" +
+    ".kv-pop-line.m{color:var(--muted);font-size:.8rem}" +
     ".kv-main{min-width:0;display:block}" +
     ".kv-main strong{font-size:1rem}" +
     ".kv-hn{display:inline-block;min-width:3.2ch;margin-right:8px;font-weight:850}" +
@@ -417,6 +568,16 @@
     ".kv-form .wide{grid-column:1 / -1}" +
     ".kv-form input,.kv-form select,.kv-form textarea{font-size:16px}" +
     ".kv-hint{margin:4px 0 0;color:var(--muted);font-size:.78rem}" +
+    ".kv-wa{display:flex;align-items:center;gap:10px;font-weight:800;cursor:pointer}" +
+    ".kv-wa input{width:22px;height:22px;flex:0 0 22px}" +
+    ".kv-grpinfo{font-size:.86rem;font-weight:700;color:#7a5200;line-height:1.5}" +
+    ".kv-grpinfo .btn{min-height:38px;padding:6px 12px;margin-top:6px}" +
+    ".kv-grppick{margin:8px 0 4px;min-height:44px}" +
+    ".kv-grpm{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0}" +
+    ".kv-grpm .btn{min-height:30px;padding:2px 10px;margin:0}" +
+    ".kv-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}" +
+    ".kv-chips .btn{min-height:38px;padding:6px 11px;font-size:.84rem}" +
+    ".kv-hintbox{padding:10px 12px;border:1px solid #ecd9a8;border-radius:12px;background:#fffaf0}" +
     ".kv-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px}" +
     ".kv-pickbtn{display:inline-flex;align-items:center;gap:8px}" +
     ".kv-chk{flex:0 0 24px;width:24px;height:24px;margin-right:12px;border:2px solid #b7bec5;border-radius:7px;background:#fff;position:relative}" +
@@ -456,6 +617,36 @@
      ============================================================ */
 
   var browsers = [];
+
+  /* Offene Termine (vom Terminplaner geliefert): Kunden mit Termin bekommen einen dezenten „Termin“-Button */
+  var aptFn = null, aptCache = null, aptDirty = false;
+  function aptIndex() {
+    if (aptCache) return aptCache;
+    var byId = {}, byNr = {}, list = [];
+    try { list = aptFn ? aptFn() || [] : []; } catch (e) { list = []; }
+    list.forEach(function (a) {
+      if (a.kid) (byId[a.kid] = byId[a.kid] || []).push(a);
+      else if (a.knr) (byNr[a.knr] = byNr[a.knr] || []).push(a);
+    });
+    aptCache = { byId: byId, byNr: byNr };
+    return aptCache;
+  }
+  function aptsOf(k) {
+    var ix = aptIndex();
+    return (ix.byId[k.id] || []).concat(k.nr && ix.byNr[k.nr] ? ix.byNr[k.nr] : []);
+  }
+  function aptsChanged() {
+    aptCache = null;
+    aptDirty = true;
+    flushApts();
+  }
+  function flushApts() {
+    var v = document.getElementById("kundenView");
+    if (aptDirty && v && v.offsetParent !== null) {
+      aptDirty = false;
+      refreshAll();
+    }
+  }
 
   /* mode: "manage" (Kundenverwaltung) oder "pick" (Auswahl) */
   function mountBrowser(host, mode, onPick, opts) {
@@ -601,6 +792,19 @@
       return multi ? '<span class="kv-chk' + (sel.has(k.id) ? " on" : "") + '"></span>' : "";
     }
 
+    function aptTag(k) {
+      if (mode !== "manage") return "";
+
+      var l = aptsOf(k);
+
+      if (!l.length) return "";
+
+      return (
+        ' <span class="kv-apt" role="button" tabindex="0" data-kv="apt" data-id="' + E(k.id) + '" title="Angemeldet – Termin ansehen">📅 ' +
+        E(l[0].dateShort || l[0].date) + (l.length > 1 ? " +" + (l.length - 1) : "") + "</span>"
+      );
+    }
+
     function houseRow(k) {
       return item(k, houseButton(k));
     }
@@ -617,6 +821,9 @@
         E(k.house || "–") +
         "</span>" +
         E(k.name || "(ohne Namen)") +
+        (k.waReg ? " 💬" : "") +
+        (k.group ? " 🏘" : "") +
+        aptTag(k) +
         "</strong>" +
         (cityLine(k) ? '<span class="kv-sub">' + E(cityLine(k)) + "</span>" : "") +
         '</span><span class="kv-nr">Kd-Nr ' +
@@ -633,6 +840,9 @@
         E(streetLine(k) || "(ohne Straße)") +
         "</strong> · " +
         E(k.name || "(ohne Namen)") +
+        (k.waReg ? " 💬" : "") +
+        (k.group ? " 🏘" : "") +
+        aptTag(k) +
         '<span class="kv-sub">' +
         E(cityLine(k) || NO_CITY) +
         '</span></span><span class="kv-nr">Kd-Nr ' +
@@ -641,14 +851,28 @@
       );
     }
 
+    function shown() {
+      var a = kunden.slice().sort(custCmp);
+
+      if (mode !== "manage") return a;
+
+      var pr = getProg();
+
+      return a.filter(function (k) {
+        return progOfNr(k.nr) === pr;
+      });
+    }
+
     function update() {
-      var all = kunden.slice().sort(custCmp);
+      var all = shown();
       var html = "";
       var q = st.q.trim();
 
       if (!all.length) {
         body.innerHTML =
-          '<div class="kv-empty">Noch keine Kunden angelegt.<br>Mit „+ Neuer Kunde“ den ersten Kunden anlegen.</div>';
+          '<div class="kv-empty">' +
+          (mode === "manage" ? "Noch keine Kunden im Programm " + PROGS[getProg()].name + " angelegt." : "Noch keine Kunden angelegt.") +
+          "<br>Mit „+ Neuer Kunde“ den ersten Kunden anlegen.</div>";
         return;
       }
 
@@ -661,7 +885,7 @@
           '<div class="kv-list">' +
           (found.length
             ? found.map(searchRow).join("")
-            : '<div class="kv-empty">Kein Kunde gefunden.</div>') +
+            : '<div class="kv-empty">Kein Kunde gefunden.' + otherHit(q) + "</div>") +
           "</div>" +
           '<div class="kv-foot">' +
           found.length +
@@ -710,14 +934,32 @@
         html = crumbs() + '<div class="kv-list">' + inStreet.map(houseRow).join("") + "</div>";
       }
 
-      html += '<div class="kv-foot">' + all.length + (all.length === 1 ? " Kunde" : " Kunden") + " insgesamt</div>";
+      html +=
+        '<div class="kv-foot">' + all.length + (all.length === 1 ? " Kunde" : " Kunden") +
+        (mode === "manage" ? " im Programm " + E(PROGS[getProg()].name) : " insgesamt") + "</div>";
 
       body.innerHTML = html;
     }
 
+    /* Treffer im anderen Programm anzeigen (nur Verwaltung) */
+    function otherHit(q) {
+      if (mode !== "manage") return "";
+
+      var pr = getProg();
+      var other = pr === "dexheimer" ? "hottgenroth" : "dexheimer";
+      var n = kunden.filter(function (k) {
+        return progOfNr(k.nr) === other && matches(k, q);
+      }).length;
+
+      return n
+        ? '<br><button type="button" class="btn btn-light" style="margin-top:8px" data-kv="swprog" data-v="' + other + '">' +
+            n + (n === 1 ? " Treffer" : " Treffer") + " im Programm " + E(PROGS[other].name) + " ansehen</button>"
+        : "";
+    }
+
     /* Kunden der aktuellen Ansicht (Suchergebnis, Straße, Ort oder alle) */
     function visibleList() {
-      var all = kunden.slice().sort(custCmp);
+      var all = shown();
       var q = st.q.trim();
 
       if (q) {
@@ -746,6 +988,12 @@
 
       var a = t.getAttribute("data-kv");
 
+      if (a === "swprog") {
+        setProg(t.getAttribute("data-v"));
+        refreshAll();
+        return;
+      }
+
       if (a === "new") {
         openEditor(null, {
           onSaved: function (k) {
@@ -758,6 +1006,8 @@
             }
           }
         });
+      } else if (a === "apt") {
+        showApts(byId(t.getAttribute("data-id")));
       } else if (a === "selall") {
         visibleList().forEach(function (k) {
           sel.add(k.id);
@@ -818,6 +1068,16 @@
         } else {
           openEditor(k, {});
         }
+      }
+    });
+
+    host.addEventListener("keydown", function (e) {
+      var ap = e.target.closest && e.target.closest('[data-kv="apt"]');
+
+      if (ap && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        e.stopPropagation();
+        showApts(byId(ap.getAttribute("data-id")));
       }
     });
 
@@ -908,6 +1168,8 @@
     browsers.forEach(function (b) {
       b.update();
     });
+
+    if (typeof renderProg === "function") renderProg();
   }
 
   /* ============================================================
@@ -920,8 +1182,13 @@
 
     ov.className = "kv-overlay top";
 
+    var formProg = k ? progOfNr(k.nr) : getProg();
+    var dexForm = formProg === "dexheimer";
+
     var insertOptions = kunden
-      .slice()
+      .filter(function (c) {
+        return progOfNr(c.nr) === "hottgenroth";
+      })
       .sort(function (a, b) {
         return nrSort(a) - nrSort(b);
       })
@@ -943,9 +1210,13 @@
       '</h3><button type="button" class="btn btn-light" data-x="close">Schließen</button></div>' +
       '<div class="kv-sheet-body"><div class="kv-form">' +
       '<div class="field"><label for="kvNr">Kundennummer</label>' +
-      '<input id="kvNr" type="text" inputmode="decimal" autocomplete="off">' +
-      '<p class="kv-hint">Format 1.000 bis 9999.999</p></div>' +
-      (isNew
+      '<input id="kvNr" type="text" inputmode="' + (dexForm ? "text" : "decimal") + '" autocomplete="off">' +
+      '<p class="kv-hint">' +
+      (dexForm
+        ? "Dexheimer: Ortschaft-Straße-Hausnummer, z. B. 02-001-0001"
+        : "Format 1.000 bis 9999.999") +
+      "</p></div>" +
+      (isNew && !dexForm
         ? '<div class="field"><label for="kvIns">Einschub nach Kunde</label>' +
           '<select id="kvIns"><option value="">– nein, neuer Kunde am Ende –</option>' +
           insertOptions +
@@ -958,11 +1229,27 @@
       '<div class="field"><label for="kvZip">PLZ</label><input id="kvZip" type="text" inputmode="numeric" autocomplete="off"></div>' +
       '<div class="field"><label for="kvCity">Ort</label><input id="kvCity" type="text" autocomplete="off"></div>' +
       '<div class="field wide"><label for="kvPhone">Telefon / E-Mail</label><input id="kvPhone" type="text" autocomplete="off"></div>' +
+      '<div class="field wide kv-hintbox"><label class="kv-wa"><input type="checkbox" id="kvWa"><span>💬 Anmeldung immer per WhatsApp (statt Zettel)</span></label>' +
+      '<p class="kv-hint">Termine dieses Kunden kommen nicht in den Druckpool, sondern in den WhatsApp-Pool. Dafür oben die Handynummer eintragen.</p></div>' +
+      '<div class="field wide kv-hintbox"><label for="kvGroup">🏘 Gruppe – mehrere Häuser desselben Kunden</label>' +
+      '<input id="kvGroup" type="text" list="kvGroupList" maxlength="60" autocomplete="off" placeholder="z. B. Müller Hof (bei allen Häusern gleich eintragen)">' +
+      '<datalist id="kvGroupList"></datalist>' +
+      '<p class="kv-hint">Häuser mit gleichem Gruppennamen werden am selben Tag direkt hintereinander eingeplant und zusammen angemeldet (ein Zettel / eine Nachricht).</p>' +
+      '<button type="button" class="btn btn-gold kv-grppick" data-x="grppick">👥 Kunden für die Gruppe auswählen</button>' +
+      '<div id="kvGroupInfo" class="kv-grpinfo"></div></div>' +
       '<div class="field wide"><label for="kvOwner">Abweichende Anschrift des Eigentümers (optional)</label>' +
       '<input id="kvOwner" type="text" placeholder="Straße, PLZ Ort" autocomplete="off">' +
       '<p class="kv-hint">Leer lassen, wenn der Eigentümer im Haus wohnt.</p></div>' +
-      '<div class="field wide"><label for="kvNotes">Besonderheiten</label>' +
-      '<textarea id="kvNotes" rows="3" placeholder="Zugang, Hinweise …"></textarea></div>' +
+      '<div class="field wide kv-hintbox"><label for="kvHint">💡 Hinweise für unterwegs <span class="kv-hint" style="font-weight:600">(nur für dich – erscheinen im Kalender und in der Tagesübersicht, nie auf dem Zettel)</span></label>' +
+      '<div class="kv-chips" id="kvHintChips">' +
+      '<button type="button" class="btn btn-light" data-chip="🔑 Schlüssel: ">🔑 Schlüssel</button>' +
+      '<button type="button" class="btn btn-light" data-chip="🐕 Hund vorhanden">🐕 Hund</button>' +
+      '<button type="button" class="btn btn-light" data-chip="📞 Vorher anrufen">📞 Vorher anrufen</button>' +
+      '<button type="button" class="btn btn-light" data-chip="🪜 Dachausstieg schwierig">🪜 Dachausstieg</button>' +
+      '<button type="button" class="btn btn-light" data-chip="🔔 Klingel defekt – bitte anrufen">🔔 Klingel defekt</button></div>' +
+      '<textarea id="kvHint" rows="3" placeholder="z. B. Schlüssel beim Nachbarn Nr. 12, Hund im Garten, Zugang über Hof …"></textarea></div>' +
+      '<div class="field wide"><label for="kvNotes">Besonderheiten <span class="kv-hint" style="font-weight:600">(erscheinen als „Hinweis“ auf dem Anmeldezettel für den Kunden)</span></label>' +
+      '<textarea id="kvNotes" rows="2" placeholder="Nur Dinge, die der Kunde auf dem Zettel lesen soll"></textarea></div>' +
       '<div class="field wide"><label>Wunschzeiten (wann ist der Kunde am besten erreichbar?)</label>' +
       '<div id="kvWishes"></div>' +
       '<button type="button" class="btn btn-light" data-x="wish" style="margin-top:6px">＋ Wunschzeit hinzufügen</button>' +
@@ -992,15 +1279,120 @@
       return ov.querySelector("#" + id);
     }
 
-    f("kvNr").value = k ? k.nr : nextMainNr() || "";
+    f("kvNr").value = k ? k.nr : (dexForm ? nextDexNr({}) : nextMainNr()) || "";
+
+    /* Dexheimer: Nummer-Vorschlag folgt Ort / Straße / Hausnummer, solange die Nummer nicht von Hand geändert wurde */
+    if (isNew && dexForm) {
+      var nrTouched = false;
+
+      f("kvNr").addEventListener("input", function () {
+        nrTouched = true;
+      });
+
+      ["kvCity", "kvStreet", "kvHouse"].forEach(function (id) {
+        f(id).addEventListener("input", function () {
+          if (nrTouched) return;
+
+          var sug = nextDexNr({ city: f("kvCity").value, street: f("kvStreet").value, house: f("kvHouse").value });
+
+          if (sug) f("kvNr").value = sug;
+        });
+      });
+    }
     f("kvName").value = k ? k.name : "";
     f("kvStreet").value = k ? k.street : "";
     f("kvHouse").value = k ? k.house : "";
     f("kvZip").value = k ? k.zip : "";
     f("kvCity").value = k ? k.city : "";
     f("kvPhone").value = k ? k.phone : "";
+    f("kvWa").checked = !!(k && k.waReg);
+    f("kvGroup").value = k ? k.group || "" : "";
+
+    /* groupSel = die ANDEREN Häuser dieser Gruppe (ids); groupManual = per Hand gewählt (dann nicht mehr automatisch aus dem Namen gefüllt) */
+    var me = k ? k.id : "",
+      groupSel = [],
+      groupSug = [],
+      groupManual = false;
+
+    f("kvGroupList").innerHTML = groupNames()
+      .map(function (g) {
+        return '<option value="' + E(g) + '"></option>';
+      })
+      .join("");
+
+    function addrText(x) {
+      return E(
+        x.name + ", " + ([[x.street, x.house].filter(Boolean).join(" "), x.city].filter(Boolean).join(", ") || "ohne Adresse")
+      );
+    }
+
+    function loadGroup() {
+      groupSel = groupMembers(f("kvGroup").value.trim())
+        .filter(function (x) {
+          return x.id !== me;
+        })
+        .map(function (x) {
+          return x.id;
+        });
+    }
+
+    function byId(id) {
+      return kunden.filter(function (x) {
+        return x.id === id;
+      })[0];
+    }
+
+    function groupInfo() {
+      var g = f("kvGroup").value.trim(),
+        nm = f("kvName").value.trim().toLowerCase(),
+        html = "";
+
+      if (g || groupSel.length) {
+        html += groupSel.length
+          ? "🏘 Häuser in dieser Gruppe (zusammen auf einem Zettel):<br>" +
+            groupSel
+              .map(function (id) {
+                var x = byId(id);
+
+                return x
+                  ? '• <span class="kv-grpm">' +
+                      addrText(x) +
+                      ' <button type="button" class="btn btn-light" data-x="grpdel" data-id="' +
+                      E(id) +
+                      '" aria-label="Aus Gruppe entfernen">✕</button></span>'
+                  : "";
+              })
+              .join("<br>")
+          : "Noch kein weiteres Haus in dieser Gruppe.";
+      }
+
+      groupSug = nm
+        ? kunden.filter(function (x) {
+            return x.id !== me && x.name.trim().toLowerCase() === nm && groupSel.indexOf(x.id) < 0;
+          })
+        : [];
+
+      if (groupSug.length) {
+        html +=
+          (html ? "<br>" : "") +
+          "Gleicher Name gefunden: " +
+          groupSug.map(addrText).join(" · ") +
+          '<br><button type="button" class="btn btn-light" data-x="grpsug">🏘 Zur Gruppe hinzufügen</button>';
+      }
+
+      f("kvGroupInfo").innerHTML = html;
+    }
+
+    loadGroup();
+
+    ov.addEventListener("input", function (e) {
+      if (e.target.id === "kvGroup" && !groupManual) loadGroup();
+      if (e.target.id === "kvGroup" || e.target.id === "kvName") groupInfo();
+    });
+    groupInfo();
     f("kvOwner").value = k ? k.ownerAddr : "";
     f("kvNotes").value = k ? k.notes : "";
+    f("kvHint").value = k ? k.hint || "" : "";
     f("kvBoss").value = k ? k.bossNote || "" : "";
     /* Wunschzeiten: im Editor "" statt 00:00 / 23:59 anzeigen (offen) */
     var wishes = cleanWishes(k && k.wishes).map(function (r) {
@@ -1069,6 +1461,10 @@
     }
 
     function onKey(e) {
+      var tops = document.querySelectorAll(".kv-overlay.top");
+
+      if (tops.length && tops[tops.length - 1] !== ov) return;   // darüber liegt die Kundenauswahl: dort schließen
+
       if (e.key === "Escape") {
         e.stopPropagation();
         close();
@@ -1077,7 +1473,7 @@
 
     document.addEventListener("keydown", onKey, true);
 
-    if (isNew) {
+    if (isNew && f("kvIns")) {
       f("kvIns").addEventListener("change", function () {
         var v = f("kvIns").value;
         var nr = v ? nextInsertNr(v) : nextMainNr();
@@ -1096,6 +1492,63 @@
     }
 
     ov.addEventListener("click", function (e) {
+      if (e.target.closest('[data-x="grpsug"]')) {
+        if (!f("kvGroup").value.trim()) f("kvGroup").value = f("kvName").value.trim();
+        groupManual = true;
+        groupSel = groupSel.concat(
+          groupSug.map(function (x) {
+            return x.id;
+          })
+        );
+        groupInfo();
+        return;
+      }
+
+      var gdel = e.target.closest('[data-x="grpdel"]');
+
+      if (gdel) {
+        groupManual = true;
+        groupSel = groupSel.filter(function (id) {
+          return id !== gdel.getAttribute("data-id");
+        });
+        groupInfo();
+        return;
+      }
+
+      if (e.target.closest('[data-x="grppick"]')) {
+        if (!f("kvGroup").value.trim()) f("kvGroup").value = f("kvName").value.trim() || "Gruppe";
+        pickMany(
+          function (chosen) {
+            groupManual = true;
+            groupSel = chosen
+              .map(function (x) {
+                return x.id;
+              })
+              .filter(function (id) {
+                return id !== me;
+              });
+            groupInfo();
+          },
+          groupSel,
+          null,
+          true
+        );
+        return;
+      }
+
+      var chip = e.target.closest("[data-chip]");
+
+      if (chip) {
+        var hf = f("kvHint"),
+          add = chip.getAttribute("data-chip"),
+          cur = hf.value.replace(/\s+$/, "");
+
+        hf.value = cur ? cur + "\n" + add : add;
+        hf.focus();
+        hf.setSelectionRange(hf.value.length, hf.value.length);
+        return;
+      }
+
       var t = e.target.closest("[data-x]");
 
       if (!t) return;
@@ -1173,7 +1626,7 @@
           return;
         }
 
-        var chk = checkNr(f("kvNr").value, k && k.id);
+        var chk = checkNr(f("kvNr").value, k && k.id, formProg);
 
         if (chk.error) {
           alert(chk.error);
@@ -1190,8 +1643,11 @@
           zip: f("kvZip").value.trim(),
           city: f("kvCity").value.trim(),
           phone: f("kvPhone").value.trim(),
+          waReg: f("kvWa").checked,
+          group: f("kvGroup").value.trim(),
           ownerAddr: f("kvOwner").value.trim(),
           notes: f("kvNotes").value.trim(),
+          hint: f("kvHint").value.trim(),
           bossNote: f("kvBoss").value.trim(),
           wishes: cleanWishes(
             wishes.map(function (r) {
@@ -1234,6 +1690,19 @@
           });
         }
 
+        if (rec.group) {
+          var gl2 = rec.group.toLowerCase();
+
+          kunden = kunden.map(function (x) {
+            if (x.id === rec.id) return x;
+            if (groupSel.indexOf(x.id) >= 0 && (x.group || "").trim().toLowerCase() !== gl2)
+              return Object.assign({}, x, { group: rec.group, updated: new Date().toISOString() });
+            if (groupSel.indexOf(x.id) < 0 && (x.group || "").trim().toLowerCase() === gl2)
+              return Object.assign({}, x, { group: "", updated: new Date().toISOString() });   // aus der Gruppe entfernt
+            return x;
+          });
+        }
+
         persist();
         refreshAll();
         close();
@@ -1250,6 +1719,52 @@
   /* ============================================================
      AUSWAHL-DIALOG (für Terminplaner und Rechner)
      ============================================================ */
+
+  function showApts(k) {
+    if (!k) return;
+
+    var list = aptsOf(k);
+    var ov = document.createElement("div");
+
+    ov.className = "kv-popbg";
+
+    ov.innerHTML =
+      '<div class="kv-pop" role="dialog" aria-modal="true">' +
+      '<div class="kv-pop-head"><strong>' + E(k.name || "Kunde") + '</strong>' +
+      '<button type="button" class="kv-pop-x" data-x="close" aria-label="Schließen">✕</button></div>' +
+      (list.length
+        ? list
+            .map(function (a) {
+              return (
+                '<div class="kv-pop-it"><div class="kv-pop-when">' + E(a.dateText || a.date) + (a.time ? " · " + E(a.time) + " Uhr" : "") + "</div>" +
+                '<div class="kv-pop-line">' + E(a.works && a.works.length ? a.works.join(" · ") : "–") + (a.label ? " · " + E(a.label) : "") + "</div>" +
+                (a.notes ? '<div class="kv-pop-line m">' + E(a.notes) + "</div>" : "") +
+                (a.hint ? '<div class="kv-pop-line m">' + E(a.hint) + "</div>" : "") +
+                (a.status ? '<div class="kv-pop-line m">' + E(a.status) + "</div>" : "") +
+                "</div>"
+              );
+            })
+            .join("")
+        : '<div class="kv-pop-line m">Kein offener Termin.</div>') +
+      "</div>";
+
+    document.body.appendChild(ov);
+
+    function close() {
+      document.removeEventListener("keydown", onKey);
+      ov.remove();
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape") close();
+    }
+
+    document.addEventListener("keydown", onKey);
+
+    ov.addEventListener("click", function (e) {
+      if (e.target === ov || e.target.closest('[data-x="close"]')) close();
+    });
+  }
 
   function pick(cb) {
     var ov = document.createElement("div");
@@ -1288,11 +1803,11 @@
   }
 
   /* Mehrfachauswahl: cb(arrayVonKunden) – sortiert nach Ort, Straße, Hausnummer */
-  function pickMany(cb, preselected, work) {
+  function pickMany(cb, preselected, work, top) {
     var sel = new Set(preselected || []);
     var ov = document.createElement("div");
 
-    ov.className = "kv-overlay";
+    ov.className = "kv-overlay" + (top ? " top" : "");
 
     ov.innerHTML =
       '<div class="kv-sheet" role="dialog" aria-modal="true">' +
@@ -1338,7 +1853,7 @@
     }
 
     function onKey(e) {
-      if (e.key === "Escape" && !document.querySelector(".kv-overlay.top")) close();
+      if (e.key === "Escape" && (top || !document.querySelector(".kv-overlay.top"))) close();
     }
 
     document.addEventListener("keydown", onKey);
@@ -1441,6 +1956,48 @@
     });
     persist();
     refreshAll();
+  }
+
+  /* Gruppen: mehrere Häuser desselben Kunden (gleicher Gruppenname) */
+  function groupMembers(name) {
+    var g = String(name || "").trim().toLowerCase();
+
+    if (!g) return [];
+
+    return kunden.filter(function (x) {
+      return (x.group || "").trim().toLowerCase() === g;
+    });
+  }
+
+  function groupNames() {
+    var seen = {},
+      out = [];
+
+    kunden.forEach(function (x) {
+      var g = (x.group || "").trim();
+
+      if (g && !seen[g.toLowerCase()]) {
+        seen[g.toLowerCase()] = 1;
+        out.push(g);
+      }
+    });
+    return out.sort(function (a, b) {
+      return a.localeCompare(b, "de");
+    });
+  }
+
+  /* Telefonnummer eines Kunden ergänzen/ändern (z. B. aus der Terminansage) */
+  function setPhone(id, phone) {
+    var c = byId(id);
+
+    if (!c) return false;
+
+    kunden = kunden.map(function (x) {
+      return x.id === id ? Object.assign({}, x, { phone: String(phone || "").trim(), updated: new Date().toISOString() }) : x;
+    });
+    persist();
+    refreshAll();
+    return true;
   }
 
   /* Fehlende Standorte nacheinander suchen (höchstens eine Anfrage pro Sekunde, wie von OpenStreetMap verlangt) */
@@ -1546,9 +2103,51 @@
     '<label class="btn btn-light" for="kvImport" style="cursor:pointer" title="Kundenliste aus einer Datei übernehmen (die Gesamtsicherung findest du oben im Menü „Datensicherung“)">Kundenliste importieren</label>' +
     '<input id="kvImport" type="file" accept="application/json,.json" hidden>' +
     "</div></div>" +
+    '<div class="kv-prog" id="kvProg" role="group" aria-label="Programm"></div>' +
     '<div id="kvManage"></div></div>';
 
+  function renderProg() {
+    if (typeof view === "undefined" || !view) return;
+
+    var box = view.querySelector("#kvProg");
+
+    if (!box) return;
+
+    var cur = getProg();
+    var cnt = { hottgenroth: 0, dexheimer: 0 };
+
+    kunden.forEach(function (k) {
+      cnt[progOfNr(k.nr)]++;
+    });
+
+    box.innerHTML =
+      '<span class="kv-prog-l">Programm</span>' +
+      Object.keys(PROGS)
+        .map(function (key) {
+          return (
+            '<button type="button" class="kv-progb' + (key === cur ? " on" : "") + '" data-prog="' + key + '" aria-pressed="' + (key === cur) + '">' +
+            "<strong>" + E(PROGS[key].name) + "</strong><small>" + E(PROGS[key].ex) + " · " + cnt[key] + (cnt[key] === 1 ? " Kunde" : " Kunden") + "</small></button>"
+          );
+        })
+        .join("");
+  }
+
+  view.querySelector("#kvProg").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-prog]");
+
+    if (!b) return;
+
+    setProg(b.getAttribute("data-prog"));
+    refreshAll();
+  });
+
   mountBrowser(view.querySelector("#kvManage"), "manage", null);
+  renderProg();
+
+  try {
+    new MutationObserver(flushApts).observe(view, { attributes: true, attributeFilter: ["style", "hidden", "class"] });
+    new MutationObserver(flushApts).observe(home, { attributes: true, subtree: true, attributeFilter: ["style", "hidden", "class"] });
+  } catch (e) {}
 
   view.querySelector("#kvImport").addEventListener("change", function (e) {
     var file = e.target.files && e.target.files[0];
@@ -1593,6 +2192,8 @@
      ============================================================ */
 
   window.SPKunden = {
+    setAptProvider: function (fn) { aptFn = typeof fn === "function" ? fn : null; },
+    aptsChanged: aptsChanged,
     pick: pick,
     pickMany: pickMany,
     list: function () {
@@ -1605,6 +2206,9 @@
     exportData: exportData,
     importData: importData,
     nextNumber: nextMainNr,
+    nextDexNumber: nextDexNr,
+    getProgram: getProg,
+    setProgram: function (v) { setProg(v); refreshAll(); },
     nextInsertNumber: nextInsertNr,
     parseNr: parseNr,
     wishText: wishText,
@@ -1613,6 +2217,14 @@
     geocodeAddress: geocodeAddress,
     geocodeText: geocodeText,
     geocodeMissing: geocodeMissing,
-    setLocation: setLocation
+    setLocation: setLocation,
+    setPhone: setPhone,
+    groupMembers: groupMembers,
+    groupNames: groupNames,
+    hasWa: function () {
+      return kunden.some(function (k) {
+        return k.waReg;
+      });
+    }
   };
 })();
